@@ -17,14 +17,15 @@ OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 SPDX-License-Identifier: MIT
 *********************************************************************************************************************/
 
-#ifndef CONFIG_H_
-#define CONFIG_H_
+#ifndef BSP_H_
+#define BSP_H_
 
-/** @file config.h
- ** @brief 
+/** @file bsp.h
+ ** @brief Declaraciones para el módulo de inicialización de la placa
  **/
 
 /* === Headers files inclusions ==================================================================================== */
+#include <digital.h>
 
 /* === Header for C++ compatibility ================================================================================ */
 
@@ -36,9 +37,30 @@ extern "C" {
 
 /* === Public data type declarations =============================================================================== */
 
+//! Representa las entradas y salidas digitales de la placa
+typedef struct board_s {
+    digital_output_t led_yellow;
+    digital_output_t led_red;
+    digital_output_t led_green;
+    digital_output_t led_r;
+    digital_output_t led_g;
+    digital_output_t led_b;
+    digital_input_t tec_1;
+    digital_input_t tec_2;
+    digital_input_t tec_3;
+    digital_input_t tec_4;
+} * board_t;
+
 /* === Public variable declarations ================================================================================ */
 
 /* === Public function declarations ================================================================================ */
+
+/**
+ * @brief Inicializa la placa y configura entradas y salidas digitales
+ *
+ * @return board_t Referencia a la placa creada
+ */
+board_t BoardCreate(void);
 
 /* === End of conditional blocks =================================================================================== */
 
@@ -46,4 +68,4 @@ extern "C" {
 }
 #endif
 
-#endif /* CONFIG_H_ */
+#endif /* BSP_H_ */

@@ -25,6 +25,8 @@ SPDX-License-Identifier: MIT
  **/
 
 /* === Headers files inclusions ==================================================================================== */
+#include <stdint.h>
+#include <stdbool.h>
 
 /* === Header for C++ compatibility ================================================================================ */
 
@@ -35,6 +37,7 @@ extern "C" {
 /* === Public macros definitions =================================================================================== */
 
 /* === Public data type declarations =============================================================================== */
+
 //! Representa los cambios de estado que puede haber tenido una entrada digital
 typedef enum digital_state_e {
     DIGITAL_INPUT_WAS_DEACTIVATED = -1, //!< La entrada pasó de activa a inactiva

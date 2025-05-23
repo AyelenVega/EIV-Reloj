@@ -17,30 +17,20 @@ OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 SPDX-License-Identifier: MIT
 *********************************************************************************************************************/
 
-/** @file  digital.c
- ** @brief Codigo fuente para el modulo de gestion de entradas y salidas digitales
+/** @file bsp.c
+ ** @brief Implementación del modulo de inicialización de la placa
  **/
 
 /* === Headers files inclusions ==================================================================================== */
-#include <stdlib.h>
-#include "digital.h"
+
+#include "bsp.h"
 #include "chip.h"
+#include "ciaa.h"
+#include <stdlib.h>
 
 /* === Macros definitions ========================================================================================== */
 
 /* === Private data type declarations ============================================================================== */
-
-struct digital_output_s {
-    uint8_t gpio; //!< Numero de puerto
-    uint8_t bit;  //!< Numero de pin
-};
-
-struct digital_input_s {
-    uint8_t gpio;
-    uint8_t bit;
-    bool inverted;
-    bool lastState;
-};
 
 /* === Private function declarations =============================================================================== */
 
@@ -52,66 +42,45 @@ struct digital_input_s {
 
 /* === Public function implementation ============================================================================== */
 
-digital_output_t DigitalOutputCreate(uint8_t gpio, uint8_t bit) {
-    digital_output_t self = malloc(sizeof(struct digital_output_s));
-    if (self != NULL) {
-        self->gpio = gpio;
-        self->bit = bit;
+board_t BoardCreate(void) {
+    board_t board = malloc(sizeof(struct board_s));
+    if (board != NULL) {
+
+        // LEDS RGB
+        Chip_SCU_PinMuxSet(LED_R_PORT, LED_R_PIN, SCU_MODE_INBUFF_EN | SCU_MODE_INACT | LED_R_FUNC);
+        board->led_r = DigitalOutputCreate(LED_R_GPIO, LED_R_BIT);
+
+        Chip_SCU_PinMuxSet(LED_G_PORT, LED_G_PIN, SCU_MODE_INBUFF_EN | SCU_MODE_INACT | LED_G_FUNC);
+        board->led_g = DigitalOutputCreate(LED_G_GPIO, LED_G_BIT);
+
+        Chip_SCU_PinMuxSet(LED_B_PORT, LED_B_PIN, SCU_MODE_INBUFF_EN | SCU_MODE_INACT | LED_B_FUNC);
+        board->led_b = DigitalOutputCreate(LED_B_GPIO, LED_B_BIT);
+
+        // LEDS 1 - 3
+        Chip_SCU_PinMuxSet(LED_1_PORT, LED_1_PIN, SCU_MODE_INBUFF_EN | SCU_MODE_INACT | LED_1_FUNC);
+        board->led_yellow = DigitalOutputCreate(LED_1_GPIO, LED_1_BIT);
+
+        Chip_SCU_PinMuxSet(LED_2_PORT, LED_2_PIN, SCU_MODE_INBUFF_EN | SCU_MODE_INACT | LED_2_FUNC);
+        board->led_red = DigitalOutputCreate(LED_2_GPIO, LED_2_BIT);
+
+        Chip_SCU_PinMuxSet(LED_3_PORT, LED_3_PIN, SCU_MODE_INBUFF_EN | SCU_MODE_INACT | LED_3_FUNC);
+        board->led_green = DigitalOutputCreate(LED_3_GPIO, LED_3_BIT);
+
+        // TECLAS
+        Chip_SCU_PinMuxSet(TEC_1_PORT, TEC_1_PIN, SCU_MODE_INBUFF_EN | SCU_MODE_PULLUP | TEC_1_FUNC);
+        board->tec_1 = DigitalInputCreate(TEC_1_GPIO, TEC_1_BIT, true);
+
+        Chip_SCU_PinMuxSet(TEC_2_PORT, TEC_2_PIN, SCU_MODE_INBUFF_EN | SCU_MODE_PULLUP | TEC_2_FUNC);
+        board->tec_2 = DigitalInputCreate(TEC_2_GPIO, TEC_2_BIT, true);
+
+        Chip_SCU_PinMuxSet(TEC_3_PORT, TEC_3_PIN, SCU_MODE_INBUFF_EN | SCU_MODE_PULLUP | TEC_3_FUNC);
+        board->tec_3 = DigitalInputCreate(TEC_3_GPIO, TEC_3_BIT, true);
+
+        Chip_SCU_PinMuxSet(TEC_4_PORT, TEC_4_PIN, SCU_MODE_INBUFF_EN | SCU_MODE_PULLUP | TEC_4_FUNC);
+        board->tec_4 = DigitalInputCreate(TEC_4_GPIO, TEC_4_BIT, true);
     }
-    DigitalOutputDeactivate(self);
-    Chip_GPIO_SetPinDIR(LPC_GPIO_PORT, self->gpio, self->bit, true);
-    return self;
-}
 
-void DigitalOutputActivate(digital_output_t self) {
-    Chip_GPIO_SetPinState(LPC_GPIO_PORT, self->gpio, self->bit, true);
-}
-
-void DigitalOutputDeactivate(digital_output_t self) {
-    Chip_GPIO_SetPinState(LPC_GPIO_PORT, self->gpio, self->bit, false);
-}
-
-void DigitalOutputToggle(digital_output_t self) {
-    Chip_GPIO_SetPinToggle(LPC_GPIO_PORT, self->gpio, self->bit);
-}
-
-digital_input_t DigitalInputCreate(uint8_t gpio, uint8_t bit, bool inverted) {
-    digital_input_t self = malloc(sizeof(struct digital_input_s));
-    if (self != NULL) {
-        self->gpio = gpio;
-        self->bit = bit;
-        self->inverted = inverted;
-        self->lastState = DigitalInputGetIsActive(self);
-    }
-    Chip_GPIO_SetPinDIR(LPC_GPIO_PORT, self->gpio, self->bit, false);
-    return self;
-}
-
-bool DigitalInputGetIsActive(digital_input_t self) {
-    bool state = Chip_GPIO_ReadPortBit(LPC_GPIO_PORT, self->gpio, self->bit);
-    if (self->inverted) {
-        state = !state;
-    }
-    return state;
-}
-
-bool DigitalInputWasActivated(digital_input_t self) {
-    return DIGITAL_INPUT_WAS_ACTIVATED == DigitalInputWasChanged(self);
-}
-bool DigitalInputWasDeactivated(digital_input_t self) {
-    return DIGITAL_INPUT_WAS_DEACTIVATED == DigitalInputWasChanged(self);
-}
-
-digital_state_t DigitalInputWasChanged(digital_input_t self) {
-    bool state = DigitalInputGetIsActive(self);
-    digital_state_t result = DIGITAL_INPUT_NO_CHANGE;
-    if (state && !self->lastState) {
-        result = DIGITAL_INPUT_WAS_ACTIVATED;
-    } else if (!state && self->lastState) {
-        result = DIGITAL_INPUT_WAS_DEACTIVATED;
-    }
-    self->lastState = state;
-    return result;
+    return board;
 }
 
 /* === End of documentation ======================================================================================== */
