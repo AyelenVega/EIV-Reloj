@@ -88,7 +88,7 @@ void ScreenWrite(screen_t self, uint8_t value[], uint8_t size) {
 }
 void ScreenRefresh(screen_t self) {
     self->driver->DigitsTurnOff();
-    self->current_digit = (self->current_digit + 1) % self->current_digit;
+    self->current_digit = (self->current_digit + 1) % self->digits;
     self->driver->SegmentsUpdate(self->value[self->current_digit]);
     self->driver->DigitsTurnOn(self->current_digit);
 }

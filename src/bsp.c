@@ -124,9 +124,8 @@ board_t BoardCreate(void) {
         DigitsInit();
         SegmentsInit();
         board->screen = ScreenCreate(4, &screen_driver);
-
-        return board;
     }
+    return board;
 }
 
 /* === End of documentation ========================================================================================

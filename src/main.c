@@ -62,40 +62,13 @@ int main(void) {
     board_t board = BoardCreate();
     uint8_t value[4] = {1, 2, 3, 4};
     ScreenWrite(board->screen, value, 4);
-    // int divisor = 0;
 
     while (true) {
-        /*
-        if (DigitalInputGetIsActive(board->tec_1)) {
-            DigitalOutputActivate(board->led_b);
 
-        } else {
-            DigitalOutputDeactivate(board->led_b);
+        ScreenRefresh(board->screen);
+        for (int delay = 0; delay < 25000; delay++) {
+            __asm("NOP");
         }
-
-        if (DigitalInputWasActivated(board->tec_2)) {
-            DigitalOutputToggle(board->led_yellow);
-        }
-
-        if (DigitalInputGetIsActive(board->tec_3)) {
-            DigitalOutputActivate(board->led_red);
-        }
-        if (DigitalInputGetIsActive(board->tec_4)) {
-            DigitalOutputDeactivate(board->led_red);
-        }
-
-        divisor++;
-        if (divisor == 5) {
-            divisor = 0;
-            DigitalOutputToggle(board->led_green);
-        }
-
-        for (int index = 0; index < 100; index++) {
-            for (int delay = 0; delay < 25000; delay++) {
-                __asm("NOP");
-            }
-        }
-        */
     }
 }
 

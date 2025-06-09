@@ -42,7 +42,7 @@ extern "C" {
 #define SEGMENT_E (1 << 4)
 #define SEGMENT_F (1 << 5)
 #define SEGMENT_G (1 << 6)
-#define SEGMENT_P (1 << 6)
+#define SEGMENT_P (1 << 7)
 
 /* === Public data type declarations =============================================================================== */
 typedef struct screen_s * screen_t;
@@ -63,6 +63,7 @@ typedef struct screen_driver_s {
 screen_t ScreenCreate(uint8_t digits, screen_driver_t driver);
 void ScreenWrite(screen_t self, uint8_t value[], uint8_t size);
 void ScreenRefresh(screen_t self);
+
 /* === End of conditional blocks =================================================================================== */
 
 #ifdef __cplusplus
