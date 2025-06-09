@@ -23,9 +23,8 @@ SPDX-License-Identifier: MIT
 
 /* === Headers files inclusions ==================================================================================== */
 #include <stdlib.h>
+#include <string.h>
 #include "display.h"
-#include "chip.h"
-#include "ciaa.h"
 #include "poncho.h"
 
 /* === Macros definitions ========================================================================================== */
@@ -38,6 +37,12 @@ SPDX-License-Identifier: MIT
 struct display_s {
     uint8_t digits;
     uint8_t current_digit;
+    struct {
+        uint8_t from;
+        uint8_t to;
+        uint8_t count;
+        uint16_t frecuency;
+    } digit_flashing;
     display_driver_t driver;
     uint8_t value[DISPLAY_MAX_DIGITS];
 };
@@ -74,6 +79,8 @@ display_t DisplayCreate(uint8_t digits, display_driver_t driver) {
         self->digits = digits;
         self->driver = driver;
         self->current_digit = 0;
+        self->digit_flashing.count = 0;
+        self->digit_flashing.frecuency = 0;
     }
     return self;
 }
@@ -87,10 +94,41 @@ void DisplayWrite(display_t self, uint8_t value[], uint8_t size) {
     }
 }
 void DisplayRefresh(display_t self) {
+    uint8_t segments;
+
     self->driver->DigitsTurnOff();
     self->current_digit = (self->current_digit + 1) % self->digits;
-    self->driver->SegmentsUpdate(self->value[self->current_digit]);
+
+    segments = self->value[self->current_digit];
+    if (self->digit_flashing.frecuency != 0) {
+        if (self->current_digit == 0) {
+            self->digit_flashing.count = (self->digit_flashing.count + 1) % (self->digit_flashing.frecuency);
+        }
+        if (self->digit_flashing.count < (self->digit_flashing.frecuency / 2)) {
+            if ((self->current_digit >= self->digit_flashing.from) &&
+                (self->current_digit <= self->digit_flashing.to)) {
+                segments = 0;
+            }
+        }
+    }
+
+    self->driver->SegmentsUpdate(segments);
     self->driver->DigitsTurnOn(self->current_digit);
+}
+
+int DisplayFlashDigits(display_t self, uint8_t from, uint8_t to, uint16_t time_on) {
+    int result = 0;
+    if ((from > to) || (from >= DISPLAY_MAX_DIGITS) || (to >= DISPLAY_MAX_DIGITS)) {
+        result = -1;
+    } else if (!self) {
+        result = -1;
+    } else {
+        self->digit_flashing.from = from;
+        self->digit_flashing.to = to;
+        self->digit_flashing.frecuency = 2 * time_on;
+        self->digit_flashing.count = 0;
+    }
+    return result;
 }
 
 /* === End of documentation ======================================================================================== */

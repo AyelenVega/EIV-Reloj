@@ -63,6 +63,7 @@ typedef struct display_driver_s {
 display_t DisplayCreate(uint8_t digits, display_driver_t driver);
 void DisplayWrite(display_t self, uint8_t value[], uint8_t size);
 void DisplayRefresh(display_t self);
+int DisplayFlashDigits(display_t self, uint8_t from, uint8_t to, uint16_t time_on);
 
 /* === End of conditional blocks =================================================================================== */
 

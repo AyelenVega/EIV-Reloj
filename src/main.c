@@ -62,6 +62,7 @@ int main(void) {
     board_t board = BoardCreate();
     uint8_t value[4] = {1, 2, 3, 4};
     DisplayWrite(board->display, value, 4);
+    DisplayFlashDigits(board->display, 0, 2, 50);
 
     while (true) {
 
