@@ -60,9 +60,12 @@
 
 int main(void) {
     board_t board = BoardCreate();
-    int divisor = 0;
+    uint8_t value[4] = {1, 2, 3, 4};
+    ScreenWrite(board->screen, value, 4);
+    // int divisor = 0;
 
     while (true) {
+        /*
         if (DigitalInputGetIsActive(board->tec_1)) {
             DigitalOutputActivate(board->led_b);
 
@@ -92,6 +95,7 @@ int main(void) {
                 __asm("NOP");
             }
         }
+        */
     }
 }
 

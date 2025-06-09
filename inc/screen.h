@@ -17,16 +17,16 @@ OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 SPDX-License-Identifier: MIT
 *********************************************************************************************************************/
 
-#ifndef BSP_H_
-#define BSP_H_
+#ifndef SCREEN_H_
+#define SCREEN_H_
 
-/** @file bsp.h
- ** @brief Declaraciones para el módulo de inicialización de la placa
+/** @file screen.h
+ ** @brief Declaraciones del módulo para la gestion de una pantalla multiplexada de 7 segmentos
  **/
 
 /* === Headers files inclusions ==================================================================================== */
-#include "digital.h"
-#include "screen.h"
+#include <stdint.h>
+#include <stdbool.h>
 
 /* === Header for C++ compatibility ================================================================================ */
 
@@ -35,36 +35,38 @@ extern "C" {
 #endif
 
 /* === Public macros definitions =================================================================================== */
+#define SEGMENT_A (1 << 0)
+#define SEGMENT_B (1 << 1)
+#define SEGMENT_C (1 << 2)
+#define SEGMENT_D (1 << 3)
+#define SEGMENT_E (1 << 4)
+#define SEGMENT_F (1 << 5)
+#define SEGMENT_G (1 << 6)
+#define SEGMENT_P (1 << 6)
 
 /* === Public data type declarations =============================================================================== */
+typedef struct screen_s * screen_t;
 
-//! Representa las entradas y salidas digitales de la placa
-typedef struct board_s {
-    digital_output_t buzzer;
-    digital_output_t set_time;
-    digital_output_t set_alarm;
-    digital_input_t decrement;
-    digital_input_t increment;
-    digital_input_t accept;
-    digital_input_t cancel;
-    screen_t screen;
-} * const board_t;
+typedef void (*digits_turn_off_t)(void);
+typedef void (*segments_update_t)(uint8_t);
+typedef void (*digits_turn_on_t)(uint8_t);
+
+typedef struct screen_driver_s {
+    digits_turn_off_t DigitsTurnOff;
+    segments_update_t SegmentsUpdate;
+    digits_turn_on_t DigitsTurnOn;
+} const * screen_driver_t;
 
 /* === Public variable declarations ================================================================================ */
 
 /* === Public function declarations ================================================================================ */
-
-/**
- * @brief Inicializa la placa y configura entradas y salidas digitales
- *
- * @return board_t Referencia a la placa creada
- */
-board_t BoardCreate(void);
-
+screen_t ScreenCreate(uint8_t digits, screen_driver_t driver);
+void ScreenWrite(screen_t self, uint8_t value[], uint8_t size);
+void ScreenRefresh(screen_t self);
 /* === End of conditional blocks =================================================================================== */
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* BSP_H_ */
+#endif /* SCREEN_H_ */
