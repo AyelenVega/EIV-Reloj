@@ -27,7 +27,6 @@ SPDX-License-Identifier: MIT
 #include "chip.h"
 #include "ciaa.h"
 #include "poncho.h"
-#include "screen.h"
 #include <stdlib.h>
 
 /* === Macros definitions ========================================================================================== */
@@ -43,7 +42,7 @@ void DigitsTurnOn(uint8_t digit);
 void SegmentUpdate(uint8_t value);
 
 /* === Private variable definitions ================================================================================ */
-static const struct screen_driver_s screen_driver = {
+static const struct display_driver_s display_driver = {
     .DigitsTurnOff = DigitsTurnOff,
     .SegmentsUpdate = SegmentUpdate,
     .DigitsTurnOn = DigitsTurnOn,
@@ -123,7 +122,7 @@ board_t BoardCreate(void) {
     if (board != NULL) {
         DigitsInit();
         SegmentsInit();
-        board->screen = ScreenCreate(4, &screen_driver);
+        board->display = DisplayCreate(4, &display_driver);
     }
     return board;
 }

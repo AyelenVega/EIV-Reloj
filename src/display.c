@@ -17,29 +17,29 @@ OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 SPDX-License-Identifier: MIT
 *********************************************************************************************************************/
 
-/** @file  screen.c
+/** @file  display.c
  ** @brief Codigo fuente para el modulo de gestion de entradas y salidas digitales
  **/
 
 /* === Headers files inclusions ==================================================================================== */
 #include <stdlib.h>
-#include "screen.h"
+#include "display.h"
 #include "chip.h"
 #include "ciaa.h"
 #include "poncho.h"
 
 /* === Macros definitions ========================================================================================== */
-#ifndef SCREEN_MAX_DIGITS
-#define SCREEN_MAX_DIGITS 8
+#ifndef DISPLAY_MAX_DIGITS
+#define DISPLAY_MAX_DIGITS 8
 #endif
 
 /* === Private data type declarations ============================================================================== */
 
-struct screen_s {
+struct display_s {
     uint8_t digits;
     uint8_t current_digit;
-    screen_driver_t driver;
-    uint8_t value[SCREEN_MAX_DIGITS];
+    display_driver_t driver;
+    uint8_t value[DISPLAY_MAX_DIGITS];
 };
 
 static const uint8_t DIGIT_MAP[10] = {
@@ -65,10 +65,10 @@ static const uint8_t DIGIT_MAP[10] = {
 /* === Private function definitions ================================================================================ */
 
 /* === Public function implementation ============================================================================== */
-screen_t ScreenCreate(uint8_t digits, screen_driver_t driver) {
-    screen_t self = malloc(sizeof(struct screen_s));
-    if (digits > SCREEN_MAX_DIGITS) {
-        digits = SCREEN_MAX_DIGITS;
+display_t DisplayCreate(uint8_t digits, display_driver_t driver) {
+    display_t self = malloc(sizeof(struct display_s));
+    if (digits > DISPLAY_MAX_DIGITS) {
+        digits = DISPLAY_MAX_DIGITS;
     }
     if (self != NULL) {
         self->digits = digits;
@@ -77,7 +77,7 @@ screen_t ScreenCreate(uint8_t digits, screen_driver_t driver) {
     }
     return self;
 }
-void ScreenWrite(screen_t self, uint8_t value[], uint8_t size) {
+void DisplayWrite(display_t self, uint8_t value[], uint8_t size) {
     memset(self->value, 0, sizeof(self->value));
     if (size > self->digits) {
         size = self->digits;
@@ -86,7 +86,7 @@ void ScreenWrite(screen_t self, uint8_t value[], uint8_t size) {
         self->value[i] = DIGIT_MAP[value[i]];
     }
 }
-void ScreenRefresh(screen_t self) {
+void DisplayRefresh(display_t self) {
     self->driver->DigitsTurnOff();
     self->current_digit = (self->current_digit + 1) % self->digits;
     self->driver->SegmentsUpdate(self->value[self->current_digit]);

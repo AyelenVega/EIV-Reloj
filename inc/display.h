@@ -17,10 +17,10 @@ OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 SPDX-License-Identifier: MIT
 *********************************************************************************************************************/
 
-#ifndef SCREEN_H_
-#define SCREEN_H_
+#ifndef DISPLAY_H_
+#define DISPLAY_H_
 
-/** @file screen.h
+/** @file display.h
  ** @brief Declaraciones del módulo para la gestion de una pantalla multiplexada de 7 segmentos
  **/
 
@@ -45,24 +45,24 @@ extern "C" {
 #define SEGMENT_P (1 << 7)
 
 /* === Public data type declarations =============================================================================== */
-typedef struct screen_s * screen_t;
+typedef struct display_s * display_t;
 
 typedef void (*digits_turn_off_t)(void);
 typedef void (*segments_update_t)(uint8_t);
 typedef void (*digits_turn_on_t)(uint8_t);
 
-typedef struct screen_driver_s {
+typedef struct display_driver_s {
     digits_turn_off_t DigitsTurnOff;
     segments_update_t SegmentsUpdate;
     digits_turn_on_t DigitsTurnOn;
-} const * screen_driver_t;
+} const * display_driver_t;
 
 /* === Public variable declarations ================================================================================ */
 
 /* === Public function declarations ================================================================================ */
-screen_t ScreenCreate(uint8_t digits, screen_driver_t driver);
-void ScreenWrite(screen_t self, uint8_t value[], uint8_t size);
-void ScreenRefresh(screen_t self);
+display_t DisplayCreate(uint8_t digits, display_driver_t driver);
+void DisplayWrite(display_t self, uint8_t value[], uint8_t size);
+void DisplayRefresh(display_t self);
 
 /* === End of conditional blocks =================================================================================== */
 
@@ -70,4 +70,4 @@ void ScreenRefresh(screen_t self);
 }
 #endif
 
-#endif /* SCREEN_H_ */
+#endif /* DISPLAY_H_ */

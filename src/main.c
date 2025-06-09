@@ -61,11 +61,11 @@
 int main(void) {
     board_t board = BoardCreate();
     uint8_t value[4] = {1, 2, 3, 4};
-    ScreenWrite(board->screen, value, 4);
+    DisplayWrite(board->display, value, 4);
 
     while (true) {
 
-        ScreenRefresh(board->screen);
+        DisplayRefresh(board->display);
         for (int delay = 0; delay < 25000; delay++) {
             __asm("NOP");
         }
