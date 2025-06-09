@@ -41,6 +41,7 @@
 /* === Headers files inclusions =============================================================== */
 #include "digital.h"
 #include "bsp.h"
+#include <stdbool.h>
 
 /* === Macros definitions ====================================================================== */
 
@@ -62,7 +63,10 @@ int main(void) {
     board_t board = BoardCreate();
     uint8_t value[4] = {1, 2, 3, 4};
     DisplayWrite(board->display, value, 4);
-    DisplayFlashDigits(board->display, 0, 2, 50);
+    DisplayFlashDigits(board->display, 0, 1, 50);
+    DisplayFlashPoint(board->display, 0b00001010, 50);
+    DisplaySetPoint(board->display, 0, true);
+    DisplaySetPoint(board->display, 2, true);
 
     while (true) {
 

@@ -45,12 +45,15 @@ extern "C" {
 #define SEGMENT_P (1 << 7)
 
 /* === Public data type declarations =============================================================================== */
+//! Estructura que representa un display
 typedef struct display_s * display_t;
 
+//! Punteros a funciones para digitos
 typedef void (*digits_turn_off_t)(void);
 typedef void (*segments_update_t)(uint8_t);
 typedef void (*digits_turn_on_t)(uint8_t);
 
+//! Estructura que representa el driver del display
 typedef struct display_driver_s {
     digits_turn_off_t DigitsTurnOff;
     segments_update_t SegmentsUpdate;
@@ -60,10 +63,57 @@ typedef struct display_driver_s {
 /* === Public variable declarations ================================================================================ */
 
 /* === Public function declarations ================================================================================ */
+/**
+ * @brief Crea el display de 7 segmentos
+ *
+ * @param digits Cantidad de digitos
+ * @param driver Puntero al driver
+ * @return display_t Referencia al display creado
+ */
 display_t DisplayCreate(uint8_t digits, display_driver_t driver);
+
+/**
+ * @brief Escribe en el display
+ *
+ * @param self Referencia al display
+ * @param value Valores que se escribirán en la pantalla
+ * @param size Cantidad de pantallas en el display
+ */
 void DisplayWrite(display_t self, uint8_t value[], uint8_t size);
+/**
+ * @brief Refresca la pantalla
+ *
+ * @param self Referencia al display
+ */
 void DisplayRefresh(display_t self);
+/**
+ * @brief Hace parpadear los digitos
+ *
+ * @param self Referencia al display
+ * @param from Desde que digito debe parpadear
+ * @param to Hasta que digito se quiere que parpadee
+ * @param time_on Cantidad de veces que se quiere que el digito este prendido
+ * @return int Devuelve -1 si hubo algún error y 0 si no hubieron errores
+ */
 int DisplayFlashDigits(display_t self, uint8_t from, uint8_t to, uint16_t time_on);
+/**
+ * @brief Hace parpadear los puntos
+ *
+ * @param self Referencia al display
+ * @param mask Mascara que indica cuales son los puntos que se quieren prender
+ * @param time_on Cantidad de veces que se quiere que el punto este prendido
+ * @return int Devuelve -1 si hubo algún error y 0 si no hubieron errores
+ */
+int DisplayFlashPoint(display_t self, uint8_t mask, uint16_t time_on);
+/**
+ * @brief Setea en 0 o 1 el punto
+ *
+ * @param self Referencia al display
+ * @param digit Punto que se quiere setear
+ * @param on True si se lo quiere prender, False si se lo quiere apagar
+ * @return int int Devuelve -1 si hubo algún error y 0 si no hubieron errores
+ */
+int DisplaySetPoint(display_t self, uint8_t digit, bool on);
 
 /* === End of conditional blocks =================================================================================== */
 

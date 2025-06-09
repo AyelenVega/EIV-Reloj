@@ -34,11 +34,34 @@ SPDX-License-Identifier: MIT
 /* === Private data type declarations ============================================================================== */
 
 /* === Private function declarations =============================================================================== */
+/**
+ * @brief Inicializa los digitos
+ *
+ */
 void DigitsInit(void);
+/**
+ * @brief Inicializa los segmentos
+ *
+ */
 void SegmentsInit(void);
 
+/**
+ * @brief Borra los digitos
+ *
+ */
 void DigitsTurnOff(void);
+/**
+ * @brief Prende los digitos
+ *
+ * @param digit Digito a prender
+ */
 void DigitsTurnOn(uint8_t digit);
+
+/**
+ * @brief Actualiza el valor de los segmentos
+ *
+ * @param value Valor nuevo de los segmentos
+ */
 void SegmentUpdate(uint8_t value);
 
 /* === Private variable definitions ================================================================================ */
