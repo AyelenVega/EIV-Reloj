@@ -34,6 +34,9 @@ SPDX-License-Identifier: MIT
 /* === Private data type declarations ============================================================================== */
 
 /* === Private function declarations =============================================================================== */
+void DigitalOutputInit(board_t self);
+void DigitalInputInit(board_t self);
+
 /**
  * @brief Inicializa los digitos
  *
@@ -126,6 +129,37 @@ void SegmentsInit(void) {
     Chip_GPIO_SetPinDIR(LPC_GPIO_PORT, SEGMENT_P_GPIO, SEGMENT_P_BIT, true);
 }
 
+void DigitalOutputInit(board_t const self) {
+    // BUZZER
+    Chip_SCU_PinMuxSet(BUZZER_PORT, BUZZER_PIN, SCU_MODE_INBUFF_EN | SCU_MODE_INACT | BUZZER_FUNC);
+    self->buzzer = DigitalOutputCreate(BUZZER_GPIO, BUZZER_BIT);
+}
+void DigitalInputInit(board_t self) {
+    // TECLA SET TIME
+    Chip_SCU_PinMuxSet(KEY_F1_PORT, KEY_F1_PIN, SCU_MODE_INBUFF_EN | SCU_MODE_PULLUP | KEY_F1_FUNC);
+    self->set_time = DigitalInputCreate(KEY_F1_GPIO, KEY_F1_BIT, true);
+
+    // TECLA SET ALARM
+    Chip_SCU_PinMuxSet(KEY_F2_PORT, KEY_F2_PIN, SCU_MODE_INBUFF_EN | SCU_MODE_PULLUP | KEY_F2_FUNC);
+    self->set_alarm = DigitalInputCreate(KEY_F2_GPIO, KEY_F2_BIT, true);
+
+    // TECLA DECREMENT
+    Chip_SCU_PinMuxSet(KEY_F3_PORT, KEY_F3_PIN, SCU_MODE_INBUFF_EN | SCU_MODE_PULLUP | KEY_F3_FUNC);
+    self->decrement = DigitalInputCreate(KEY_F3_GPIO, KEY_F3_BIT, true);
+
+    // TECLA INCREMENT
+    Chip_SCU_PinMuxSet(KEY_F4_PORT, KEY_F4_PIN, SCU_MODE_INBUFF_EN | SCU_MODE_PULLUP | KEY_F4_FUNC);
+    self->increment = DigitalInputCreate(KEY_F4_GPIO, KEY_F4_BIT, true);
+
+    // TECLA ACCEPT
+    Chip_SCU_PinMuxSet(KEY_ACCEPT_PORT, KEY_ACCEPT_PIN, SCU_MODE_INBUFF_EN | SCU_MODE_PULLUP | KEY_ACCEPT_FUNC);
+    self->accept = DigitalInputCreate(KEY_ACCEPT_GPIO, KEY_ACCEPT_BIT, true);
+
+    // TECLA CANCEL
+    Chip_SCU_PinMuxSet(KEY_CANCEL_PORT, KEY_CANCEL_PIN, SCU_MODE_INBUFF_EN | SCU_MODE_PULLUP | KEY_CANCEL_FUNC);
+    self->cancel = DigitalInputCreate(KEY_CANCEL_GPIO, KEY_CANCEL_BIT, true);
+}
+
 void DigitsTurnOff(void) {
     Chip_GPIO_ClearValue(LPC_GPIO_PORT, DIGITS_GPIO, DIGITS_MASK);
     Chip_GPIO_ClearValue(LPC_GPIO_PORT, SEGMENTS_GPIO, SEGMENTS_MASK);
@@ -138,6 +172,7 @@ void SegmentUpdate(uint8_t value) {
 void DigitsTurnOn(uint8_t digit) {
     Chip_GPIO_SetValue(LPC_GPIO_PORT, DIGITS_GPIO, (1 << (3 - digit)) & DIGITS_MASK);
 }
+
 /* === Public function implementation ============================================================================== */
 
 board_t BoardCreate(void) {
@@ -145,6 +180,8 @@ board_t BoardCreate(void) {
     if (board != NULL) {
         DigitsInit();
         SegmentsInit();
+        DigitalInputInit(board);
+        DigitalOutputInit(board);
         board->display = DisplayCreate(4, &display_driver);
     }
     return board;
