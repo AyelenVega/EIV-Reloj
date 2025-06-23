@@ -50,24 +50,41 @@ Alarma
 
 /* === Macros definitions ========================================================================================== */
 #define CLOCK_TICK_PER_SECONDS 5
+#define TEST_ASSERT_TIME(hours_tens, hours_units, minutes_tens, minutes_units, seconds_tens, seconds_units,            \
+                         current_time)                                                                                 \
+    clock_time_t current_time = {0};                                                                                   \
+    TEST_ASSERT_TRUE_MESSAGE(ClockGetTime(clock, &current_time), "Clock has invalid time");                            \
+    TEST_ASSERT_EQUAL_UINT8_MESSAGE(seconds_units, current_time.bcd[0], "Diference in unit seconds");                  \
+    TEST_ASSERT_EQUAL_UINT8_MESSAGE(seconds_tens, current_time.bcd[1], "Diference in tens seconds");                   \
+    TEST_ASSERT_EQUAL_UINT8_MESSAGE(minutes_units, current_time.bcd[2], "Diference in unit minutes");                  \
+    TEST_ASSERT_EQUAL_UINT8_MESSAGE(minutes_tens, current_time.bcd[3], "Diference in tens minutes");                   \
+    TEST_ASSERT_EQUAL_UINT8_MESSAGE(hours_units, current_time.bcd[4], "Diference in unit hours");                      \
+    TEST_ASSERT_EQUAL_UINT8_MESSAGE(hours_tens, current_time.bcd[5], "Diference in tens hours")
 
-/* === Private data type declarations ============================================================================== */
+/* === Private data type declarations ==============================================================================
+ */
 
-/* === Private function declarations =============================================================================== */
-void SimulateSeconds(clock_t clock, uint8_t seconds);
+/* === Private function declarations ===============================================================================
+ */
+static void SimulateSeconds(clock_t clock, uint8_t seconds);
 
 /* === Private variable definitions ================================================================================ */
 
 /* === Public variable definitions ================================================================================= */
+clock_t clock;
 
 /* === Private function definitions ================================================================================ */
-void SimulateSeconds(clock_t clock, uint8_t seconds) {
+static void SimulateSeconds(clock_t clock, uint8_t seconds) {
     for (uint8_t i = 0; i < CLOCK_TICK_PER_SECONDS * seconds; i++) {
         ClockNewTick(clock);
     }
 }
 
 /* === Public function implementation ============================================================================== */
+void setUp() {
+    clock = ClockCreate(CLOCK_TICK_PER_SECONDS);
+}
+
 // Al inicializar el reloj está en 00:00 y con hora invalida.
 void test_set_up_with_invalid_time(void) {
     clock_time_t current_time = {.bcd = {1, 2, 3, 4, 5, 6}};
@@ -77,21 +94,51 @@ void test_set_up_with_invalid_time(void) {
 }
 // Al ajustar la hora el reloj queda en hora y es válida.
 void test_set_up_with_valid_time(void) {
-    static const clock_time_t new_time = {.time = {.seconds = {4, 5}, .minutes = {1, 5}, .hours = {1, 2}}};
-    clock_time_t current_time = {0};
-    clock_t clock = ClockCreate(CLOCK_TICK_PER_SECONDS);
+    static const clock_time_t new_time = {.time = {.hours = {1, 2}, .minutes = {3, 0}, .seconds = {4, 5}}};
     TEST_ASSERT_TRUE(ClockSetTime(clock, &new_time));
-    TEST_ASSERT_TRUE(ClockGetTime(clock, &current_time));
-    TEST_ASSERT_EQUAL_INT8_ARRAY(new_time.bcd, current_time.bcd, 6);
+    TEST_ASSERT_TIME(2, 1, 0, 3, 5, 4, current_time);
 }
 // Después de n ciclos de reloj la hora avanza un segundo
 void test_clock_advance_one_second(void) {
-    clock_time_t current_time = {0};
-    static const clock_time_t expected_time = {.time = {.seconds = {1, 0}, .minutes = {0, 0}, .hours = {0, 0}}};
-    clock_t clock = ClockCreate(CLOCK_TICK_PER_SECONDS);
     ClockSetTime(clock, &(clock_time_t){0});
     SimulateSeconds(clock, 1);
-    ClockGetTime(clock, &current_time);
-    TEST_ASSERT_EQUAL_INT8_ARRAY(expected_time.bcd, current_time.bcd, 6);
+    TEST_ASSERT_TIME(0, 0, 0, 0, 0, 1, current_time);
+}
+
+// Después de n ciclos de reloj la hora avanza diez segundos
+void test_clock_advance_ten_seconds(void) {
+    ClockSetTime(clock, &(clock_time_t){0});
+    SimulateSeconds(clock, 10);
+    TEST_ASSERT_TIME(0, 0, 0, 0, 1, 0, current_time);
+}
+
+void test_clock_advance_one_minute(void) {
+    ClockSetTime(clock, &(clock_time_t){.time = {.hours = {0, 0}, .minutes = {0, 0}, .seconds = {5, 5}}});
+    SimulateSeconds(clock, 5);
+    TEST_ASSERT_TIME(0, 0, 0, 1, 0, 0, current_time);
+}
+
+void test_clock_advance_ten_minutes(void) {
+    ClockSetTime(clock, &(clock_time_t){.time = {.hours = {0, 0}, .minutes = {9, 0}, .seconds = {5, 5}}});
+    SimulateSeconds(clock, 5);
+    TEST_ASSERT_TIME(0, 0, 1, 0, 0, 0, current_time);
+}
+
+void test_clock_advance_one_hour(void) {
+    ClockSetTime(clock, &(clock_time_t){.time = {.hours = {0, 0}, .minutes = {9, 5}, .seconds = {5, 5}}});
+    SimulateSeconds(clock, 5);
+    TEST_ASSERT_TIME(0, 1, 0, 0, 0, 0, current_time);
+}
+
+void test_clock_advance_ten_hours(void) {
+    ClockSetTime(clock, &(clock_time_t){.time = {.hours = {9, 0}, .minutes = {9, 5}, .seconds = {5, 5}}});
+    SimulateSeconds(clock, 5);
+    TEST_ASSERT_TIME(1, 0, 0, 0, 0, 0, current_time);
+}
+
+void test_clock_advance_one_day(void) {
+    ClockSetTime(clock, &(clock_time_t){.time = {.hours = {3, 2}, .minutes = {9, 5}, .seconds = {5, 5}}});
+    SimulateSeconds(clock, 5);
+    TEST_ASSERT_TIME(0, 0, 0, 0, 0, 0, current_time);
 }
 /* === End of documentation ======================================================================================== */
