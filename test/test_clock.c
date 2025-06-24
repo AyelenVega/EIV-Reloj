@@ -32,11 +32,13 @@ Hora actual
 - Hacer una prueba con frecuencia de reloj diferente
 
 
+
 Alarma
 -Probar que al setear la alarma esta suene
 -Probar que al deshabilitar la alarma no suene
 -Probar que al posponer alarma suene despues de x tiempo
 -Hacer sonar la alarma y cancelarla hasta el dia siguiente
+-Setear alarma con hora invalida
 
 *********************************************************************************************************************/
 
@@ -140,5 +142,67 @@ void test_clock_advance_one_day(void) {
     ClockSetTime(clock, &(clock_time_t){.time = {.hours = {3, 2}, .minutes = {9, 5}, .seconds = {5, 5}}});
     SimulateSeconds(clock, 5);
     TEST_ASSERT_TIME(0, 0, 0, 0, 0, 0, current_time);
+}
+
+// Alarma
+// Fijar la hora de la alarma y consultarla.
+void test_set_up_alarm_with_valid_time() {
+    static const clock_time_t new_alarm = {.time = {.hours = {1, 2}, .minutes = {0, 3}, .seconds = {0, 0}}};
+    clock_time_t alarm_time = {0};
+    TEST_ASSERT_TRUE(ClockSetAlarm(clock, &new_alarm));
+    ClockGetAlarm(clock, &alarm_time);
+    TEST_ASSERT_EQUAL_UINT8_ARRAY(new_alarm.bcd, alarm_time.bcd, 6);
+}
+// Fijar la alarma y avanzar el reloj para que suene.
+void test_set_alarm_advance_clock_and_expect_ring() {
+    static const clock_time_t new_alarm = {.time = {.hours = {1, 2}, .minutes = {0, 3}, .seconds = {2, 0}}};
+    static const clock_time_t current_time = {.time = {.hours = {1, 2}, .minutes = {0, 3}, .seconds = {0, 0}}};
+    ClockSetTime(clock, &current_time);
+    ClockSetAlarm(clock, &new_alarm);
+    SimulateSeconds(clock, 2);
+    TEST_ASSERT_TRUE(ClockIsAlarmActive(clock));
+}
+
+// Fijar la alarma, avanzar el reloj pero antes de que tenga que sonar
+void test_set_alarm_advance_clock_and_expect_not_to_ring() {
+    static const clock_time_t new_alarm = {.time = {.hours = {1, 2}, .minutes = {0, 3}, .seconds = {3, 0}}};
+    static const clock_time_t current_time = {.time = {.hours = {1, 2}, .minutes = {0, 3}, .seconds = {0, 0}}};
+    ClockSetTime(clock, &current_time);
+    ClockSetAlarm(clock, &new_alarm);
+    SimulateSeconds(clock, 2);
+    TEST_ASSERT_FALSE(ClockIsAlarmActive(clock));
+}
+
+// Fijar la alarma, deshabilitarla y avanzar el reloj para no suene
+void test_set_alarm_and_disable_alarm() {
+    static const clock_time_t new_alarm = {.time = {.hours = {1, 2}, .minutes = {0, 3}, .seconds = {2, 0}}};
+    static const clock_time_t current_time = {.time = {.hours = {1, 2}, .minutes = {0, 3}, .seconds = {0, 0}}};
+    ClockSetTime(clock, &current_time);
+    ClockSetAlarm(clock, &new_alarm);
+    TEST_ASSERT_TRUE(ClockAlarmEnable(clock, false));
+    TEST_ASSERT_FALSE(ClockIsAlarmEnabled(clock));
+    SimulateSeconds(clock, 2);
+    TEST_ASSERT_FALSE(ClockIsAlarmActive(clock));
+}
+// Hacer sonar la alarma y posponerla.
+void test_postpone_alarm() {
+    static const clock_time_t new_alarm = {.time = {.hours = {1, 2}, .minutes = {0, 3}, .seconds = {0, 0}}};
+    static const clock_time_t current_time = {.time = {.hours = {1, 2}, .minutes = {0, 3}, .seconds = {0, 0}}};
+    static const clock_time_t postpone_alarm = {.time = {.hours = {1, 2}, .minutes = {0, 3}, .seconds = {0, 3}}};
+    clock_time_t alarm_time = {0};
+    uint8_t postpone_seconds = 30;
+    // Seteo tiempo y alarma
+    ClockSetTime(clock, &current_time);
+    ClockSetAlarm(clock, &new_alarm);
+    ClockActivateAlarm(clock);
+    TEST_ASSERT_TRUE(ClockIsAlarmActive(clock));
+    TEST_ASSERT_TRUE(ClockPostponeAlarm(clock, postpone_seconds));
+    TEST_ASSERT_FALSE(ClockIsAlarmActive(clock));
+    ClockGetAlarm(clock, &alarm_time);
+    TEST_ASSERT_EQUAL_UINT8_ARRAY(postpone_alarm.bcd, alarm_time.bcd, 6);
+    SimulateSeconds(clock, postpone_seconds);
+    clock_time_t now;
+    ClockGetTime(clock, &now);
+    TEST_ASSERT_TRUE(ClockIsAlarmActive(clock));
 }
 /* === End of documentation ======================================================================================== */

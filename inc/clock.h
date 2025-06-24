@@ -54,6 +54,15 @@ bool ClockGetTime(clock_t self, clock_time_t * result);
 bool ClockSetTime(clock_t self, const clock_time_t * new_time);
 void ClockNewTick(clock_t self);
 
+bool ClockSetAlarm(clock_t self, const clock_time_t * new_alarm);
+bool ClockGetAlarm(clock_t self, clock_time_t * alarm_time);
+bool ClockIsAlarmActive(clock_t self);
+
+bool ClockActivateAlarm(clock_t self);
+bool ClockAlarmEnable(clock_t self, bool enable);
+bool ClockIsAlarmEnabled(clock_t self);
+bool ClockPostponeAlarm(clock_t self, uint8_t postpone_seconds);
+
 /* === End of conditional blocks =================================================================================== */
 
 #ifdef __cplusplus
