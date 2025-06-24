@@ -34,6 +34,9 @@ extern "C" {
 #endif
 
 /* === Public macros definitions =================================================================================== */
+
+/* === Public data type declarations =============================================================================== */
+//! Estructura que define el tiempo en BCD
 typedef union {
     struct {
         uint8_t seconds[2];
@@ -44,23 +47,119 @@ typedef union {
 } clock_time_t;
 
 typedef struct clock_s * clock_t;
-/* === Public data type declarations =============================================================================== */
 
+//! Puntero a una funcion que activa la alarma
+typedef void (*clock_alarm_activate_t)(clock_t);
+
+//! Puntero a una funcion que desactiva la alarma
+typedef void (*clock_alarm_deactivate_t)(clock_t);
+
+//! Driver
+typedef struct clock_alarm_driver_s {
+    clock_alarm_activate_t AlarmActivate;
+    clock_alarm_deactivate_t AlarmDeactivate;
+} const * clock_alarm_driver_t;
 /* === Public variable declarations ================================================================================ */
 
 /* === Public function declarations ================================================================================ */
-clock_t ClockCreate(uint16_t ticks_per_second);
+/**
+ * @brief Crea el objeto reloj
+ *
+ * @param ticks_per_second cantidad de ticks por segundo
+ * @return clock_t Puntero a objeto creado
+ */
+clock_t ClockCreate(uint16_t ticks_per_second, clock_alarm_driver_t driver_alarm);
+
+/**
+ * @brief Obtiene la hora actual
+ *
+ * @param self Puntero al objeto reloj
+ * @param result Hora actual
+ * @return true Si se pudo obtener la hora
+ * @return false Si no se pudo obtener la hora
+ */
 bool ClockGetTime(clock_t self, clock_time_t * result);
+/**
+ * @brief Fija la hora del reloj a una hora dada
+ *
+ * @param self Puntero al objeto reloj
+ * @param new_time Hora a la que se setara el reloj
+ * @return true Si se pudo establecer la hora
+ * @return false Si NO se pudo establecer la hora
+ */
 bool ClockSetTime(clock_t self, const clock_time_t * new_time);
+
+/**
+ * @brief Genera los ticks del reloj
+ *
+ * @param self  Puntero al objeto reloj
+ */
 void ClockNewTick(clock_t self);
 
+/**
+ * @brief Setea la alarma a una hora dada
+ *
+ * @param self Puntero al objeto reloj
+ * @param new_alarm Hora a la que se seteará la alarma
+ * @return true Si se pudo setear
+ * @return false Si NO se pudo setear
+ */
 bool ClockSetAlarm(clock_t self, const clock_time_t * new_alarm);
+
+/**
+ * @brief Lee el valor de la hora de la alarma
+ *
+ * @param self Puntero al objeto reloj
+ * @param alarm_time Hora a la que esta seteada la alarma
+ * @return true Si la hora leida es válida
+ * @return false Si la hora leida no es válida
+ */
 bool ClockGetAlarm(clock_t self, clock_time_t * alarm_time);
+/**
+ * @brief Verifica si la alarma esta activada
+ *
+ * @param self Puntero al objeto reloj
+ * @return true Si esta activada
+ * @return false Si NO esta activada
+ */
 bool ClockIsAlarmActive(clock_t self);
 
-bool ClockActivateAlarm(clock_t self);
+/**
+ * @brief Activa o desactiva la alarma
+ *
+ * @param self Puntero al objeto reloj
+ * @param activate True si se quiere activar la alarma, false si se la quiere desactivar
+ * @return true Si pudo activarse o desactivarse
+ * @return false Si no se pudo activar o desactivar
+ */
+bool ClockActivateAlarm(clock_t self, bool activate);
+
+/**
+ * @brief Habilita o deshabilita la alarma
+ *
+ * @param self Puntero al objeto reloj
+ * @param enable True si se quiere habiliatar la alarma, false si se la quiere desactivar
+ * @return true Si se pudo activar o desactivar la alarma
+ * @return false Si no se pudo activar o desactivar la alarma
+ */
 bool ClockAlarmEnable(clock_t self, bool enable);
+
+/**
+ * @brief Verifica si la alarma esta habilitada
+ *
+ * @param self Puntero al objeto reloj
+ * @return true Si esta habilitada
+ * @return false Si esta deshabilitada
+ */
 bool ClockIsAlarmEnabled(clock_t self);
+/**
+ * @brief Pospone la alarma una n cantidad de segundos
+ *
+ * @param self Puntero a objeto relon
+ * @param postpone_seconds Cantidad de segundos que se quiere posponer
+ * @return true Si se pudo posponer la alarma
+ * @return false Si no se pudo posponer la alarma
+ */
 bool ClockPostponeAlarm(clock_t self, uint8_t postpone_seconds);
 
 /* === End of conditional blocks =================================================================================== */
