@@ -25,6 +25,7 @@ SPDX-License-Identifier: MIT
 #include "clock.h"
 #include <stddef.h>
 #include <string.h>
+#include <stdio.h>
 /* === Macros definitions ========================================================================================== */
 
 /* === Private data type declarations ============================================================================== */
@@ -84,18 +85,18 @@ bool ClockIsValidTime(const clock_time_t * time) {
     return result;
 }
 uint32_t BCDToSeconds(const clock_time_t * time) {
-    uint8_t hours = 10 * time->time.hours[1] + time->time.hours[0];
-    uint8_t minutes = 10 * time->time.minutes[1] + time->time.minutes[0];
-    uint8_t seconds = 10 * time->time.seconds[1] + time->time.seconds[0];
+    uint32_t hours = 10 * time->time.hours[1] + time->time.hours[0];
+    uint32_t minutes = 10 * time->time.minutes[1] + time->time.minutes[0];
+    uint32_t seconds = 10 * time->time.seconds[1] + time->time.seconds[0];
 
     return hours * 3600 + minutes * 60 + seconds;
 }
 
 void SecondsToBCD(clock_time_t * time, uint32_t total_seconds) {
-    uint8_t hours = (total_seconds / 3600) % 24;
+    uint32_t hours = (total_seconds / 3600) % 24;
     total_seconds %= 3600;
-    uint8_t minutes = total_seconds / 60;
-    uint8_t seconds = total_seconds % 60;
+    uint32_t minutes = total_seconds / 60;
+    uint32_t seconds = total_seconds % 60;
 
     time->time.hours[1] = hours / 10;
     time->time.hours[0] = hours % 10;
@@ -177,7 +178,8 @@ bool ClockIsAlarmEnabled(clock_t self) {
     return self->alarm_enable;
 }
 
-bool ClockPostponeAlarm(clock_t self, uint8_t postpone_seconds) {
+bool ClockPostponeAlarm(clock_t self, uint32_t postpone_minutes) {
+    uint32_t postpone_seconds = 60 * postpone_minutes;
     self->alarm_active = false;
     uint32_t alarm_seconds = BCDToSeconds(&self->alarm_time);
     alarm_seconds = (alarm_seconds + postpone_seconds) % (24 * 3600);
