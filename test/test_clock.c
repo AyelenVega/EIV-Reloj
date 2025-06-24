@@ -74,10 +74,10 @@ Alarma
 static void SimulateSeconds(clock_t clock, uint8_t seconds);
 
 //! Funcion para simular la activacion de la alarma
-static void AlarmActivate(clock_t self);
+static void AlarmActivate(clock_t clock);
 
 //! Funcion para simular la desactivacion de la alarma
-static void AlarmDeactivate(clock_t self);
+static void AlarmDeactivate(clock_t clock);
 
 /* === Private variable definitions ================================================================================ */
 
@@ -95,12 +95,12 @@ static void SimulateSeconds(clock_t clock, uint8_t seconds) {
     }
 }
 
-static void AlarmActivate(clock_t self) {
-    (void)self;
+static void AlarmActivate(clock_t clock) {
+    (void)clock;
 }
 
-static void AlarmDeactivate(clock_t self) {
-    (void)self;
+static void AlarmDeactivate(clock_t clock) {
+    (void)clock;
 }
 
 /* === Public function implementation ============================================================================== */
