@@ -120,10 +120,18 @@ clock_t ClockCreate(uint16_t ticks_per_second, clock_alarm_driver_t driver_alarm
     return self;
 }
 bool ClockGetTime(clock_t self, clock_time_t * result) {
+    if (self == NULL || result == NULL) {
+        return false;
+    }
+
     memcpy(result, &self->current_time, sizeof(clock_time_t));
     return self->valid;
 }
 bool ClockSetTime(clock_t self, const clock_time_t * new_time) {
+    if (new_time == NULL || self == NULL) {
+        return false;
+    }
+
     if (ClockIsValidTime(new_time)) {
         self->valid = true;
         memcpy(&self->current_time, new_time, sizeof(clock_time_t));
@@ -135,6 +143,10 @@ bool ClockSetTime(clock_t self, const clock_time_t * new_time) {
 }
 
 bool ClockSetAlarm(clock_t self, const clock_time_t * new_alarm) {
+    if (self == NULL || new_alarm == NULL) {
+        return false;
+    }
+
     if (ClockIsValidTime(new_alarm)) {
         self->valid_alarm = true;
         self->alarm_enable = true;
@@ -147,6 +159,9 @@ bool ClockSetAlarm(clock_t self, const clock_time_t * new_alarm) {
     return self->valid_alarm;
 }
 bool ClockGetAlarm(clock_t self, clock_time_t * alarm_time) {
+    if (self == NULL || alarm_time == NULL) {
+        return false;
+    }
     memcpy(alarm_time, &self->alarm_time, sizeof(clock_time_t));
     return self->valid_alarm;
 }
@@ -156,6 +171,10 @@ bool ClockIsAlarmActive(clock_t self) {
 }
 
 bool ClockActivateAlarm(clock_t self, bool activate) {
+    if (!self) {
+        return false;
+    }
+
     if (activate) {
         if (memcmp(self->current_time.bcd, self->alarm_time.bcd, sizeof(clock_time_t)) == 0 &&
             self->alarm_enable == true) {
@@ -171,6 +190,9 @@ bool ClockActivateAlarm(clock_t self, bool activate) {
 }
 
 bool ClockAlarmEnable(clock_t self, bool enable) {
+    if (!self) {
+        return false;
+    }
     self->alarm_enable = enable;
     return true;
 }
@@ -180,13 +202,22 @@ bool ClockIsAlarmEnabled(clock_t self) {
 
 bool ClockPostponeAlarm(clock_t self, uint32_t postpone_minutes) {
     uint32_t postpone_seconds = 60 * postpone_minutes;
+
+    if (!self) {
+        return false;
+    }
+
     self->alarm_active = false;
     uint32_t alarm_seconds = BCDToSeconds(&self->alarm_time);
     alarm_seconds = (alarm_seconds + postpone_seconds) % (24 * 3600);
     SecondsToBCD(&self->alarm_time, alarm_seconds);
     return true;
 }
-void ClockNewTick(clock_t self) {
+bool ClockNewTick(clock_t self) {
+    if (!self) {
+        return false;
+    }
+
     self->clock_ticks++;
     if (self->clock_ticks == self->ticks_per_second) {
         self->clock_ticks = 0;
@@ -196,6 +227,7 @@ void ClockNewTick(clock_t self) {
         SecondsToBCD(&self->current_time, total_seconds);
         ClockActivateAlarm(self, true);
     }
+    return true;
 }
 
 /* === End of documentation ========================================================================================

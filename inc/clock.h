@@ -95,7 +95,7 @@ bool ClockSetTime(clock_t self, const clock_time_t * new_time);
  *
  * @param self  Puntero al objeto reloj
  */
-void ClockNewTick(clock_t self);
+bool ClockNewTick(clock_t self);
 
 /**
  * @brief Setea la alarma a una hora dada

@@ -122,9 +122,45 @@ void test_set_up_with_valid_time(void) {
     TEST_ASSERT_TIME(2, 1, 0, 3, 5, 4, current_time);
 }
 
-// Poner una hora invalida al reloj
-void test_set_unvalid_time(void) {
+// Poner una hora invalida al reloj en unidad de segundos
+void test_set_unvalid_time_seconds_unit(void) {
+    static const clock_time_t new_time = {.time = {.hours = {1, 2}, .minutes = {3, 0}, .seconds = {10, 5}}};
+    TEST_ASSERT_FALSE(ClockSetTime(clock, &new_time));
+}
+
+// Poner una hora invalida al reloj en decena de segundos
+void test_set_unvalid_time_seconds_tens(void) {
+    static const clock_time_t new_time = {.time = {.hours = {1, 2}, .minutes = {3, 0}, .seconds = {4, -1}}};
+    TEST_ASSERT_FALSE(ClockSetTime(clock, &new_time));
+}
+
+// Poner una hora invalida al reloj en unidad de minutos
+void test_set_unvalid_time_minutes_unit(void) {
+    static const clock_time_t new_time = {.time = {.hours = {1, 2}, .minutes = {-1, 0}, .seconds = {4, 5}}};
+    TEST_ASSERT_FALSE(ClockSetTime(clock, &new_time));
+}
+
+// Poner una hora invalida al reloj en decena de minutos
+void test_set_unvalid_time_minutes_tens(void) {
+    static const clock_time_t new_time = {.time = {.hours = {1, 2}, .minutes = {3, 10}, .seconds = {4, 5}}};
+    TEST_ASSERT_FALSE(ClockSetTime(clock, &new_time));
+}
+
+// Poner una hora invalida al reloj en unidad de horas (con decena igual a 1)
+void test_set_unvalid_time_hour_unit_with_tens_equal_to_one(void) {
+    static const clock_time_t new_time = {.time = {.hours = {10, 1}, .minutes = {3, 0}, .seconds = {4, 5}}};
+    TEST_ASSERT_FALSE(ClockSetTime(clock, &new_time));
+}
+
+// Poner una hora invalida al reloj en unidad de horas (con decena igual a 1)
+void test_set_unvalid_time_hour_unit_with_tens_equal_to_two(void) {
     static const clock_time_t new_time = {.time = {.hours = {4, 2}, .minutes = {3, 0}, .seconds = {4, 5}}};
+    TEST_ASSERT_FALSE(ClockSetTime(clock, &new_time));
+}
+
+// Poner una hora invalida al reloj en decena de horas
+void test_set_unvalid_time_hour_tens(void) {
+    static const clock_time_t new_time = {.time = {.hours = {1, 3}, .minutes = {3, 0}, .seconds = {4, 5}}};
     TEST_ASSERT_FALSE(ClockSetTime(clock, &new_time));
 }
 
@@ -192,6 +228,7 @@ void test_set_up_alarm_with_unvalid_time(void) {
     static const clock_time_t new_alarm = {.time = {.hours = {4, 2}, .minutes = {0, 3}, .seconds = {0, 0}}};
     TEST_ASSERT_FALSE(ClockSetAlarm(clock, &new_alarm));
 }
+
 // Fijar la alarma y avanzar el reloj para que suene.
 void test_set_alarm_advance_clock_and_expect_ring(void) {
     static const clock_time_t new_alarm = {.time = {.hours = {1, 2}, .minutes = {0, 3}, .seconds = {2, 0}}};
@@ -267,6 +304,18 @@ void test_cancel_and_wait_until_next_day_but_not_ring(void) {
     TEST_ASSERT_FALSE(ClockIsAlarmActive(clock));
     SimulateSeconds(clock, 86399);
     TEST_ASSERT_FALSE(ClockIsAlarmActive(clock));
+}
+
+// Test punteros nulos
+void test_null_pointers(void) {
+    TEST_ASSERT_FALSE(ClockSetTime(NULL, NULL));
+    TEST_ASSERT_FALSE(ClockGetTime(NULL, NULL));
+    TEST_ASSERT_FALSE(ClockSetAlarm(NULL, NULL));
+    TEST_ASSERT_FALSE(ClockGetAlarm(NULL, NULL));
+    TEST_ASSERT_FALSE(ClockActivateAlarm(NULL, true));
+    TEST_ASSERT_FALSE(ClockAlarmEnable(NULL, true));
+    TEST_ASSERT_FALSE(ClockPostponeAlarm(NULL, 5));
+    TEST_ASSERT_FALSE(ClockNewTick(NULL));
 }
 
 /* === End of documentation ======================================================================================== */
