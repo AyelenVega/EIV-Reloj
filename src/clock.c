@@ -17,7 +17,7 @@ OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 SPDX-License-Identifier: MIT
 *********************************************************************************************************************/
 
-/** @file  reloj.c
+/** @file  clock.c
  ** @brief
  **/
 
@@ -31,8 +31,10 @@ SPDX-License-Identifier: MIT
 /* === Private data type declarations ============================================================================== */
 //! Estructura que define a un reloj
 struct clock_s {
-    uint16_t clock_ticks;
-    uint16_t ticks_per_second;
+    uint32_t clock_ticks;
+    uint32_t ticks_per_second;
+    uint32_t alarm_postponed_times;
+    uint32_t postponed_minutes;
     clock_time_t current_time;
     clock_time_t alarm_time;
     bool valid;
@@ -108,7 +110,7 @@ void SecondsToBCD(clock_time_t * time, uint32_t total_seconds) {
 
 /* === Public function implementation ============================================================================== */
 
-clock_t ClockCreate(uint16_t ticks_per_second, clock_alarm_driver_t driver_alarm) {
+clock_t ClockCreate(uint32_t ticks_per_second, uint32_t alarm_postponed_minutes, clock_alarm_driver_t driver_alarm) {
     static struct clock_s self[1];
     memset(self, 0, sizeof(struct clock_s));
     self->valid = false;
@@ -116,6 +118,8 @@ clock_t ClockCreate(uint16_t ticks_per_second, clock_alarm_driver_t driver_alarm
     self->valid_alarm = false;
     self->alarm_enable = false;
     self->alarm_active = false;
+    self->alarm_postponed_times = 0;
+    self->postponed_minutes = alarm_postponed_minutes;
     self->driver = driver_alarm;
     return self;
 }
@@ -171,19 +175,26 @@ bool ClockIsAlarmActive(clock_t self) {
 }
 
 bool ClockActivateAlarm(clock_t self, bool activate) {
-    if (!self) {
+    if (self == NULL) {
         return false;
     }
+
+    uint32_t alarm_seconds = BCDToSeconds(&self->alarm_time);
+    uint32_t postpone_seconds = 60 * self->postponed_minutes * self->alarm_postponed_times;
 
     if (activate) {
         if (memcmp(self->current_time.bcd, self->alarm_time.bcd, sizeof(clock_time_t)) == 0 &&
             self->alarm_enable == true) {
             self->alarm_active = true;
+
             self->driver->AlarmActivate(self);
         }
     } else {
         self->alarm_active = false;
         self->driver->AlarmDeactivate(self);
+        alarm_seconds = (alarm_seconds - postpone_seconds) % (24 * 3600);
+        SecondsToBCD(&self->alarm_time, alarm_seconds);
+        self->alarm_postponed_times = 0;
     }
 
     return true;
@@ -200,13 +211,14 @@ bool ClockIsAlarmEnabled(clock_t self) {
     return self->alarm_enable;
 }
 
-bool ClockPostponeAlarm(clock_t self, uint32_t postpone_minutes) {
-    uint32_t postpone_seconds = 60 * postpone_minutes;
-
+bool ClockPostponeAlarm(clock_t self) {
     if (!self) {
         return false;
     }
 
+    uint32_t postpone_seconds = 60 * self->postponed_minutes;
+
+    self->alarm_postponed_times++;
     self->alarm_active = false;
     uint32_t alarm_seconds = BCDToSeconds(&self->alarm_time);
     alarm_seconds = (alarm_seconds + postpone_seconds) % (24 * 3600);

@@ -49,7 +49,8 @@ Alarma
 #include "clock.h"
 
 /* === Macros definitions ========================================================================================== */
-#define CLOCK_TICK_PER_SECONDS 5 //!< Cantidad de ticks por segundo
+#define CLOCK_TICK_PER_SECONDS        5 //!< Cantidad de ticks por segundo
+#define CLOCK_ALARM_POSTPONED_MINUTES 5 //!< Cantidad de minutos que se pospone la alarma
 #define TEST_ASSERT_TIME(hours_tens, hours_units, minutes_tens, minutes_units, seconds_tens, seconds_units,            \
                          current_time)                                                                                 \
     clock_time_t current_time = {0};                                                                                   \
@@ -105,13 +106,13 @@ static void AlarmDeactivate(clock_t clock) {
 
 /* === Public function implementation ============================================================================== */
 void setUp() {
-    clock = ClockCreate(CLOCK_TICK_PER_SECONDS, &driver_alarm);
+    clock = ClockCreate(CLOCK_TICK_PER_SECONDS, CLOCK_ALARM_POSTPONED_MINUTES, &driver_alarm);
 }
 
 // Al inicializar el reloj está en 00:00 y con hora invalida.
 void test_set_up_with_invalid_time(void) {
     clock_time_t current_time = {.bcd = {1, 2, 3, 4, 5, 6}};
-    clock_t clock = ClockCreate(CLOCK_TICK_PER_SECONDS, &driver_alarm);
+    clock_t clock = ClockCreate(CLOCK_TICK_PER_SECONDS, CLOCK_ALARM_POSTPONED_MINUTES, &driver_alarm);
     TEST_ASSERT_FALSE(ClockGetTime(clock, &current_time));
     TEST_ASSERT_EACH_EQUAL_UINT8(0, current_time.bcd, 6);
 }
@@ -266,16 +267,16 @@ void test_postpone_alarm(void) {
     static const clock_time_t current_time = {.time = {.hours = {1, 2}, .minutes = {9, 2}, .seconds = {8, 5}}};
     static const clock_time_t postpone_alarm = {.time = {.hours = {1, 2}, .minutes = {5, 3}, .seconds = {0, 0}}};
     clock_time_t alarm_time = {0};
-    uint32_t postpone_minutes = 5;
+
     ClockSetTime(clock, &current_time);
     ClockSetAlarm(clock, &new_alarm);
     SimulateSeconds(clock, 2);
     TEST_ASSERT_TRUE(ClockIsAlarmActive(clock));
-    TEST_ASSERT_TRUE(ClockPostponeAlarm(clock, postpone_minutes));
+    TEST_ASSERT_TRUE(ClockPostponeAlarm(clock));
     TEST_ASSERT_FALSE(ClockIsAlarmActive(clock));
     ClockGetAlarm(clock, &alarm_time);
     TEST_ASSERT_EQUAL_UINT8_ARRAY(postpone_alarm.bcd, alarm_time.bcd, 6);
-    SimulateSeconds(clock, postpone_minutes * 60);
+    SimulateSeconds(clock, CLOCK_ALARM_POSTPONED_MINUTES * 60);
     TEST_ASSERT_TRUE(ClockIsAlarmActive(clock));
 }
 // Hacer sonar la alarma y cancelarla hasta el otro dia
@@ -306,6 +307,29 @@ void test_cancel_and_wait_until_next_day_but_not_ring(void) {
     TEST_ASSERT_FALSE(ClockIsAlarmActive(clock));
 }
 
+// Posponer alarma y ver que al dia siguiente suene en el tiempo de alarma original
+void test_postpone_alarm_and_wait_until_next_day_to_ring_at_original_time(void) {
+    static const clock_time_t new_alarm = {.time = {.hours = {1, 2}, .minutes = {0, 3}, .seconds = {0, 0}}};
+    static const clock_time_t current_time = {.time = {.hours = {1, 2}, .minutes = {9, 2}, .seconds = {8, 5}}};
+
+    ClockSetTime(clock, &current_time);
+    ClockSetAlarm(clock, &new_alarm);
+    SimulateSeconds(clock, 2);
+    TEST_ASSERT_TRUE(ClockIsAlarmActive(clock));
+    ClockPostponeAlarm(clock);
+    TEST_ASSERT_FALSE(ClockIsAlarmActive(clock));
+    SimulateSeconds(clock, 60 * CLOCK_ALARM_POSTPONED_MINUTES);
+    TEST_ASSERT_TRUE(ClockIsAlarmActive(clock));
+    ClockPostponeAlarm(clock);
+    TEST_ASSERT_FALSE(ClockIsAlarmActive(clock));
+    SimulateSeconds(clock, 60 * CLOCK_ALARM_POSTPONED_MINUTES);
+    TEST_ASSERT_TRUE(ClockIsAlarmActive(clock));
+    ClockActivateAlarm(clock, false);
+    TEST_ASSERT_FALSE(ClockIsAlarmActive(clock));
+    SimulateSeconds(clock, 86400 - (60 * CLOCK_ALARM_POSTPONED_MINUTES * 2));
+    TEST_ASSERT_TRUE(ClockIsAlarmActive(clock));
+}
+
 // Test punteros nulos
 void test_null_pointers(void) {
     TEST_ASSERT_FALSE(ClockSetTime(NULL, NULL));
@@ -314,7 +338,7 @@ void test_null_pointers(void) {
     TEST_ASSERT_FALSE(ClockGetAlarm(NULL, NULL));
     TEST_ASSERT_FALSE(ClockActivateAlarm(NULL, true));
     TEST_ASSERT_FALSE(ClockAlarmEnable(NULL, true));
-    TEST_ASSERT_FALSE(ClockPostponeAlarm(NULL, 5));
+    TEST_ASSERT_FALSE(ClockPostponeAlarm(NULL));
     TEST_ASSERT_FALSE(ClockNewTick(NULL));
 }
 

@@ -69,7 +69,7 @@ typedef struct clock_alarm_driver_s {
  * @param driver_alarm Driver para controlar alarma
  * @return clock_t Puntero a objeto creado
  */
-clock_t ClockCreate(uint16_t ticks_per_second, clock_alarm_driver_t driver_alarm);
+clock_t ClockCreate(uint32_t ticks_per_second, uint32_t alarm_postponed_minutes, clock_alarm_driver_t driver_alarm);
 
 /**
  * @brief Obtiene la hora actual
@@ -161,7 +161,7 @@ bool ClockIsAlarmEnabled(clock_t self);
  * @return true Si se pudo posponer la alarma
  * @return false Si no se pudo posponer la alarma
  */
-bool ClockPostponeAlarm(clock_t self, uint32_t postpone_minutes);
+bool ClockPostponeAlarm(clock_t self);
 
 /* === End of conditional blocks =================================================================================== */
 
