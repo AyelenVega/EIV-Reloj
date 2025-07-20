@@ -186,7 +186,6 @@ bool ClockActivateAlarm(clock_t self, bool activate) {
         if (memcmp(self->current_time.bcd, self->alarm_time.bcd, sizeof(clock_time_t)) == 0 &&
             self->alarm_enable == true) {
             self->alarm_active = true;
-
             self->driver->AlarmActivate(self);
         }
     } else {

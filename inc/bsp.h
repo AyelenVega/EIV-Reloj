@@ -48,7 +48,7 @@ typedef struct board_s {
     digital_input_t accept;
     digital_input_t cancel;
     display_t display;
-} * const board_t;
+} * board_t;
 
 /* === Public variable declarations ================================================================================ */
 
@@ -60,6 +60,7 @@ typedef struct board_s {
  * @return board_t Referencia a la placa creada
  */
 board_t BoardCreate(void);
+void SysTickInit(uint32_t ticks);
 
 /* === End of conditional blocks =================================================================================== */
 

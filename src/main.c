@@ -40,39 +40,377 @@
 
 /* === Headers files inclusions =============================================================== */
 #include "digital.h"
+#include "clock.h"
 #include "bsp.h"
 #include <stdbool.h>
 
 /* === Macros definitions ====================================================================== */
+#define POSTPONE_MINUTES 5;
+#define TICKS_PER_SECOND 1000;
+#define INACTIVITY_COUNT 30000; // ms
+#define DELAY_COUNT      1500;  // ms
+#define DELAY_COUNT_SET  3000;  // ms
 
 /* === Private data type declarations ========================================================== */
+typedef enum {
+    UNSET_TIME,
+    SHOW_TIME,
+    SET_TIME_MINUTE,
+    SET_TIME_HOUR,
+    SET_ALARM_MINUTE,
+    SET_ALARM_HOUR,
+} mode_t;
 
 /* === Private variable declarations =========================================================== */
+static board_t board;
+static mode_t mode;
+static clock_t clock;
+static const uint8_t MINUTE_LIMIT[] = {6, 0};
+static const uint8_t HOUR_LIMIT[] = {2, 4};
+static uint32_t delay_count = 0;
+static uint32_t inactivity_count = 0;
 
 /* === Private function declarations =========================================================== */
+//! Funcion para simular la activacion de la alarma
+static void AlarmActivate(clock_t clock);
+
+//! Funcion para simular la desactivacion de la alarma
+static void AlarmDeactivate(clock_t clock);
 
 /* === Public variable definitions ============================================================= */
+static const struct clock_alarm_driver_s driver_alarm = {
+    .AlarmActivate = AlarmActivate,
+    .AlarmDeactivate = AlarmDeactivate,
+};
 
 /* === Private variable definitions ============================================================ */
 
 /* === Private function implementation ========================================================= */
+void ChangeMode(mode_t value) {
+    mode = value;
+    delay_count = 0;
+    inactivity_count = 0;
+
+    switch (mode) {
+    case UNSET_TIME:
+        DisplayFlashDigits(board->display, 0, 3, 200);
+        DisplayFlashPoint(board->display, 0b00000010, 200);
+        DisplaySetPoint(board->display, 0, false);
+        DisplaySetPoint(board->display, 2, false);
+        DisplaySetPoint(board->display, 3, false);
+        break;
+    case SHOW_TIME:
+        DisplayFlashDigits(board->display, 0, 0, 0);
+        DisplaySetPoint(board->display, 2, false);
+        break;
+    case SET_TIME_MINUTE:
+        DisplayFlashDigits(board->display, 2, 3, 200);
+        DisplayFlashPoint(board->display, 0b00001111, 0);
+        // DisplaySetPoint(board->display, 0, false);
+        // DisplaySetPoint(board->display, 1, false);
+        // DisplaySetPoint(board->display, 2, false);
+        // DisplaySetPoint(board->display, 3, false);
+
+        break;
+    case SET_TIME_HOUR:
+        DisplayFlashDigits(board->display, 0, 1, 200);
+        DisplayFlashPoint(board->display, 0b00001111, 0);
+        // DisplaySetPoint(board->display, 0, false);
+        // DisplaySetPoint(board->display, 1, false);
+        // DisplaySetPoint(board->display, 2, false);
+        // DisplaySetPoint(board->display, 3, false);
+
+        break;
+    case SET_ALARM_MINUTE:
+        DisplayFlashDigits(board->display, 2, 3, 200);
+        DisplaySetPoint(board->display, 0, true);
+        DisplaySetPoint(board->display, 1, true);
+        DisplaySetPoint(board->display, 2, true);
+        DisplaySetPoint(board->display, 3, true);
+        break;
+    case SET_ALARM_HOUR:
+        DisplayFlashDigits(board->display, 0, 1, 200);
+        DisplaySetPoint(board->display, 0, true);
+        DisplaySetPoint(board->display, 1, true);
+        DisplaySetPoint(board->display, 2, true);
+        DisplaySetPoint(board->display, 3, true);
+        break;
+    default:
+        break;
+    }
+}
+
+static void AlarmActivate(clock_t clock) {
+    (void)clock;
+}
+
+static void AlarmDeactivate(clock_t clock) {
+    (void)clock;
+}
+
+void BCDIncrement(uint8_t number[2], const uint8_t limit[2]) {
+    number[1]++;
+    if (number[1] > 9) {
+        number[1] = 0;
+        number[0]++;
+    }
+    if (number[0] >= limit[0] && number[1] >= limit[1]) {
+        number[1] = 0;
+        number[0] = 0;
+    }
+}
+
+void BCDDecrement(uint8_t number[2], const uint8_t limit[2]) {
+    number[1]--;
+    if (number[1] > 9) {
+        number[1] = 9;
+        number[0]--;
+    }
+    if (number[0] > limit[0] && number[1] > limit[1]) {
+        if (limit[0] == 2 && limit[1] == 4) {
+            number[0] = 2;
+            number[1] = 3;
+        }
+        if (limit[0] == 6 && limit[1] == 0) {
+            number[0] = 5;
+            number[1] = 9;
+        }
+    }
+}
+
+void ClockTimeToBCD(clock_time_t * time, uint8_t * BCD) {
+    BCD[0] = time->time.hours[1];
+    BCD[1] = time->time.hours[0];
+    BCD[2] = time->time.minutes[1];
+    BCD[3] = time->time.minutes[0];
+}
+
+void BCDToClockTime(clock_time_t * time, uint8_t * BCD) {
+    time->time.hours[0] = BCD[1];
+    time->time.hours[1] = BCD[0];
+    time->time.minutes[0] = BCD[3];
+    time->time.minutes[1] = BCD[2];
+    time->time.seconds[0] = 0;
+    time->time.seconds[1] = 0;
+}
+
+void BCDtoHourAndMinute(uint8_t hour[], uint8_t minute[], uint8_t BCD[]) {
+    hour[0] = BCD[0];
+    hour[1] = BCD[1];
+    minute[0] = BCD[2];
+    minute[1] = BCD[3];
+}
+
+void HourAndMinuteToBCD(uint8_t hour[], uint8_t minute[], uint8_t BCD[]) {
+    BCD[0] = hour[0];
+    BCD[1] = hour[1];
+    BCD[2] = minute[0];
+    BCD[3] = minute[1];
+}
 
 /* === Public function implementation ========================================================= */
-
 int main(void) {
-    board_t board = BoardCreate();
-    uint8_t value[4] = {1, 2, 3, 4};
-    DisplayWrite(board->display, value, 4);
-    DisplayFlashDigits(board->display, 0, 1, 50);
-    DisplayFlashPoint(board->display, 0b00001010, 50);
-    DisplaySetPoint(board->display, 0, true);
-    DisplaySetPoint(board->display, 2, true);
+    clock_time_t time;
+    uint8_t hour[2] = {0};
+    uint8_t minute[2] = {0};
+    uint8_t digits[4] = {0};
+
+    clock = ClockCreate(1000, 5, &driver_alarm);
+    board = BoardCreate();
+    SysTickInit(1000);
+    ChangeMode(UNSET_TIME);
 
     while (true) {
+        switch (mode) {
+        case UNSET_TIME:
+            ClockGetTime(clock, &time);
+            ClockTimeToBCD(&time, digits);
+            BCDtoHourAndMinute(hour, minute, digits);
+            DisplayWrite(board->display, digits, sizeof(digits));
 
-        DisplayRefresh(board->display);
-        for (int delay = 0; delay < 25000; delay++) {
+            if (DigitalInputWasActivated(board->set_time) && delay_count >= 3000) {
+                delay_count = 0;
+                ChangeMode(SET_TIME_MINUTE);
+            }
+            break;
+
+        case SHOW_TIME:
+            ClockGetTime(clock, &time);
+            ClockTimeToBCD(&time, digits);
+            BCDtoHourAndMinute(hour, minute, digits);
+            DisplayWrite(board->display, digits, sizeof(digits));
+
+            if (DigitalInputWasActivated(board->set_time) && delay_count >= 3000) {
+                delay_count = 0;
+                ChangeMode(SET_TIME_MINUTE);
+            }
+
+            if (DigitalInputWasActivated(board->set_alarm) && delay_count >= 3000) {
+                delay_count = 0;
+                if (ClockGetAlarm(clock, &time)) {
+                    ClockTimeToBCD(&time, digits);
+                    BCDtoHourAndMinute(hour, minute, digits);
+                }
+                ChangeMode(SET_ALARM_MINUTE);
+                DisplayWrite(board->display, digits, sizeof(digits));
+            }
+
+            if (!ClockIsAlarmActive(clock)) {
+                if (DigitalInputWasActivated(board->accept) && delay_count >= 3000) {
+                    delay_count = 0;
+                    ClockAlarmEnable(clock, true);
+                }
+                if (DigitalInputWasActivated(board->cancel) && delay_count >= 3000) {
+                    delay_count = 0;
+                    ClockAlarmEnable(clock, false);
+                }
+            } else {
+                if (DigitalInputWasActivated(board->accept) && delay_count >= 3000) {
+                    delay_count = 0;
+                    ClockPostponeAlarm(clock);
+                }
+                if (DigitalInputWasActivated(board->cancel) && delay_count >= 3000) {
+                    delay_count = 0;
+                    ClockActivateAlarm(clock, false);
+                }
+            }
+            break;
+
+        case SET_TIME_MINUTE:
+            if (DigitalInputWasActivated(board->increment) && delay_count >= 3000) {
+                delay_count = 0;
+                BCDIncrement(minute, MINUTE_LIMIT);
+                inactivity_count = 0;
+            }
+            if (DigitalInputWasActivated(board->decrement) && delay_count >= 3000) {
+                delay_count = 0;
+                BCDDecrement(minute, MINUTE_LIMIT);
+                inactivity_count = 0;
+            }
+            if (DigitalInputWasActivated(board->accept) && delay_count >= 3000) {
+                delay_count = 0;
+                ChangeMode(SET_TIME_HOUR);
+                inactivity_count = 0;
+            }
+            if ((DigitalInputWasActivated(board->cancel) && delay_count >= 3000) || inactivity_count >= 30000) {
+                inactivity_count = 0;
+                delay_count = 0;
+                if (ClockGetTime(clock, &time)) {
+                    ChangeMode(SHOW_TIME);
+                } else {
+                    ChangeMode(UNSET_TIME);
+                }
+            }
+            HourAndMinuteToBCD(hour, minute, digits);
+            DisplayWrite(board->display, digits, sizeof(digits));
+            break;
+
+        case SET_TIME_HOUR:
+            if (DigitalInputWasActivated(board->increment) && delay_count >= 3000) {
+                delay_count = 0;
+                inactivity_count = 0;
+                BCDIncrement(hour, HOUR_LIMIT);
+            }
+            if (DigitalInputWasActivated(board->decrement) && delay_count >= 3000) {
+                delay_count = 0;
+                inactivity_count = 0;
+                BCDDecrement(hour, HOUR_LIMIT);
+            }
+            if (DigitalInputWasActivated(board->accept) && delay_count >= 3000) {
+                delay_count = 0;
+                inactivity_count = 0;
+                HourAndMinuteToBCD(hour, minute, digits);
+                BCDToClockTime(&time, digits);
+                ClockSetTime(clock, &time);
+                ChangeMode(SHOW_TIME);
+            }
+            if ((DigitalInputWasActivated(board->cancel) && delay_count >= 3000) || inactivity_count >= 30000) {
+                inactivity_count = 0;
+                delay_count = 0;
+                if (ClockGetTime(clock, &time)) {
+                    ChangeMode(SHOW_TIME);
+                } else {
+                    ChangeMode(UNSET_TIME);
+                }
+            }
+            HourAndMinuteToBCD(hour, minute, digits);
+            DisplayWrite(board->display, digits, sizeof(digits));
+            break;
+
+        case SET_ALARM_MINUTE:
+            if (DigitalInputWasActivated(board->increment) && delay_count >= 3000) {
+                delay_count = 0;
+                inactivity_count = 0;
+                BCDIncrement(minute, MINUTE_LIMIT);
+            }
+            if (DigitalInputWasActivated(board->decrement) && delay_count >= 3000) {
+                delay_count = 0;
+                inactivity_count = 0;
+                BCDDecrement(minute, MINUTE_LIMIT);
+            }
+            if (DigitalInputWasActivated(board->accept) && delay_count >= 3000) {
+                delay_count = 0;
+                inactivity_count = 0;
+                ChangeMode(SET_ALARM_HOUR);
+            }
+            if ((DigitalInputWasActivated(board->cancel) && delay_count >= 3000) || inactivity_count >= 30000) {
+                delay_count = 0;
+                inactivity_count = 0;
+                ChangeMode(SHOW_TIME);
+            }
+            HourAndMinuteToBCD(hour, minute, digits);
+            DisplayWrite(board->display, digits, sizeof(digits));
+            break;
+
+        case SET_ALARM_HOUR:
+            if (DigitalInputWasActivated(board->increment)) {
+                inactivity_count = 0;
+                BCDIncrement(hour, HOUR_LIMIT);
+            }
+            if (DigitalInputWasActivated(board->decrement)) {
+                inactivity_count = 0;
+                BCDDecrement(hour, HOUR_LIMIT);
+            }
+            if (DigitalInputWasActivated(board->accept)) {
+                inactivity_count = 0;
+                HourAndMinuteToBCD(hour, minute, digits);
+                BCDToClockTime(&time, digits);
+                ClockSetAlarm(clock, &time);
+                ChangeMode(SHOW_TIME);
+            }
+            if (DigitalInputWasActivated(board->cancel) || inactivity_count >= 30000) {
+                inactivity_count = 0;
+                ChangeMode(SHOW_TIME);
+            }
+            HourAndMinuteToBCD(hour, minute, digits);
+            DisplayWrite(board->display, digits, sizeof(digits));
+            break;
+        }
+
+        for (volatile int i = 0; i < 25000; i++) {
             __asm("NOP");
+        }
+    }
+}
+
+void SysTick_Handler(void) {
+    static uint32_t count;
+    clock_time_t time;
+    uint8_t bcd[4];
+
+    DisplayRefresh(board->display);
+    ClockNewTick(clock);
+    count = (count + 1) % 1000;
+    delay_count++;
+    inactivity_count++;
+    if (mode == SHOW_TIME) {
+        ClockGetTime(clock, &time);
+        ClockTimeToBCD(&time, bcd);
+        DisplayWrite(board->display, bcd, sizeof(bcd));
+        DisplaySetPoint(board->display, 0, ClockIsAlarmActive(clock));
+        DisplaySetPoint(board->display, 3, ClockIsAlarmEnabled(clock));
+        if (count > 500) {
+            DisplayFlashPoint(board->display, 0b00000010, 1);
         }
     }
 }

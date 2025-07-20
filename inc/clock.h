@@ -157,7 +157,6 @@ bool ClockIsAlarmEnabled(clock_t self);
  * @brief Pospone la alarma una n cantidad de segundos
  *
  * @param self Puntero a objeto relon
- * @param postpone_seconds Cantidad de segundos que se quiere posponer
  * @return true Si se pudo posponer la alarma
  * @return false Si no se pudo posponer la alarma
  */

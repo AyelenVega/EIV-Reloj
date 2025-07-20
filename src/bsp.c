@@ -187,5 +187,11 @@ board_t BoardCreate(void) {
     return board;
 }
 
+void SysTickInit(uint32_t ticks) {
+    SystemCoreClockUpdate();
+    SysTick_Config(SystemCoreClock / ticks);
+    NVIC_SetPriority(SysTick_IRQn, (1 << __NVIC_PRIO_BITS) - 1);
+}
+
 /* === End of documentation ========================================================================================
  */

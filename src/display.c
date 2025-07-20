@@ -87,6 +87,7 @@ display_t DisplayCreate(uint8_t digits, display_driver_t driver) {
         self->current_digit = 0;
         self->digit_flashing.count = 0;
         self->digit_flashing.frecuency = 0;
+        self->point_set_mask = 0;
     }
     return self;
 }
