@@ -43,13 +43,13 @@
 #include "clock.h"
 #include "bsp.h"
 #include <stdbool.h>
+#include <stddef.h>
 
 /* === Macros definitions ====================================================================== */
-#define POSTPONE_MINUTES 5;
-#define TICKS_PER_SECOND 1000;
-#define INACTIVITY_COUNT 30000; // ms
-#define DELAY_COUNT      1500;  // ms
-#define DELAY_COUNT_SET  3000;  // ms
+#define POSTPONE_MINUTES 5
+#define TICKS_PER_SECOND 1000
+#define INACTIVITY_COUNT 30000 // ms
+#define DELAY_COUNT_SET  3000  // ms
 
 /* === Private data type declarations ========================================================== */
 typedef enum {
@@ -61,13 +61,19 @@ typedef enum {
     SET_ALARM_HOUR,
 } mode_t;
 
+typedef struct {
+    bool pressed;
+    bool already_pressed;
+    uint32_t start_time;
+} button_state_t;
+
 /* === Private variable declarations =========================================================== */
 static board_t board;
 static mode_t mode;
 static clock_t clock;
 static const uint8_t MINUTE_LIMIT[] = {6, 0};
 static const uint8_t HOUR_LIMIT[] = {2, 4};
-static uint32_t delay_count = 0;
+static uint32_t system_ticks = 0;
 static uint32_t inactivity_count = 0;
 
 /* === Private function declarations =========================================================== */
@@ -86,9 +92,40 @@ static const struct clock_alarm_driver_s driver_alarm = {
 /* === Private variable definitions ============================================================ */
 
 /* === Private function implementation ========================================================= */
+bool WasButtonPressed(digital_input_t button, button_state_t * state, uint32_t hold_time) {
+    if (!DigitalInputGetIsActive(button)) { // botón presionado
+        if (!state->pressed) {
+            state->pressed = true;
+            state->start_time = system_ticks;
+        } else {
+            // Ya está presionado, verificar duración
+            if ((system_ticks - state->start_time) >= hold_time && !state->already_pressed) {
+                state->already_pressed = true;
+                return true;
+            }
+        }
+    } else {
+        // Botón soltado → resetear estado
+        state->pressed = false;
+        state->already_pressed = false;
+    }
+
+    return false;
+}
+
+bool ResetButton(button_state_t * button) {
+    if (button != NULL) {
+        button->pressed = false;
+        button->already_pressed = false;
+        button->start_time = 0;
+        return true;
+    } else {
+        return false;
+    }
+}
+
 void ChangeMode(mode_t value) {
     mode = value;
-    delay_count = 0;
     inactivity_count = 0;
 
     switch (mode) {
@@ -106,20 +143,10 @@ void ChangeMode(mode_t value) {
     case SET_TIME_MINUTE:
         DisplayFlashDigits(board->display, 2, 3, 200);
         DisplayFlashPoint(board->display, 0b00001111, 0);
-        // DisplaySetPoint(board->display, 0, false);
-        // DisplaySetPoint(board->display, 1, false);
-        // DisplaySetPoint(board->display, 2, false);
-        // DisplaySetPoint(board->display, 3, false);
-
         break;
     case SET_TIME_HOUR:
         DisplayFlashDigits(board->display, 0, 1, 200);
         DisplayFlashPoint(board->display, 0b00001111, 0);
-        // DisplaySetPoint(board->display, 0, false);
-        // DisplaySetPoint(board->display, 1, false);
-        // DisplaySetPoint(board->display, 2, false);
-        // DisplaySetPoint(board->display, 3, false);
-
         break;
     case SET_ALARM_MINUTE:
         DisplayFlashDigits(board->display, 2, 3, 200);
@@ -215,6 +242,9 @@ int main(void) {
     uint8_t minute[2] = {0};
     uint8_t digits[4] = {0};
 
+    button_state_t button_set_time = {false, false, 0};
+    button_state_t button_set_alarm = {false, false, 0};
+
     clock = ClockCreate(1000, 5, &driver_alarm);
     board = BoardCreate();
     SysTickInit(1000);
@@ -228,9 +258,9 @@ int main(void) {
             BCDtoHourAndMinute(hour, minute, digits);
             DisplayWrite(board->display, digits, sizeof(digits));
 
-            if (DigitalInputWasActivated(board->set_time) && delay_count >= 3000) {
-                delay_count = 0;
+            if (WasButtonPressed(board->set_time, &button_set_time, 3000)) {
                 ChangeMode(SET_TIME_MINUTE);
+                ResetButton(&button_set_time);
             }
             break;
 
@@ -240,61 +270,53 @@ int main(void) {
             BCDtoHourAndMinute(hour, minute, digits);
             DisplayWrite(board->display, digits, sizeof(digits));
 
-            if (DigitalInputWasActivated(board->set_time) && delay_count >= 3000) {
-                delay_count = 0;
+            if (WasButtonPressed(board->set_time, &button_set_time, 3000)) {
                 ChangeMode(SET_TIME_MINUTE);
+                ResetButton(&button_set_time);
             }
 
-            if (DigitalInputWasActivated(board->set_alarm) && delay_count >= 3000) {
-                delay_count = 0;
+            if (WasButtonPressed(board->set_alarm, &button_set_alarm, 3000)) {
                 if (ClockGetAlarm(clock, &time)) {
                     ClockTimeToBCD(&time, digits);
                     BCDtoHourAndMinute(hour, minute, digits);
                 }
                 ChangeMode(SET_ALARM_MINUTE);
+                ResetButton(&button_set_alarm);
                 DisplayWrite(board->display, digits, sizeof(digits));
             }
 
             if (!ClockIsAlarmActive(clock)) {
-                if (DigitalInputWasActivated(board->accept) && delay_count >= 3000) {
-                    delay_count = 0;
+                if (DigitalInputWasActivated(board->accept)) {
                     ClockAlarmEnable(clock, true);
                 }
-                if (DigitalInputWasActivated(board->cancel) && delay_count >= 3000) {
-                    delay_count = 0;
+                if (DigitalInputWasActivated(board->cancel)) {
                     ClockAlarmEnable(clock, false);
                 }
             } else {
-                if (DigitalInputWasActivated(board->accept) && delay_count >= 3000) {
-                    delay_count = 0;
+                if (DigitalInputWasActivated(board->accept)) {
                     ClockPostponeAlarm(clock);
                 }
-                if (DigitalInputWasActivated(board->cancel) && delay_count >= 3000) {
-                    delay_count = 0;
+                if (DigitalInputWasActivated(board->cancel)) {
                     ClockActivateAlarm(clock, false);
                 }
             }
             break;
 
         case SET_TIME_MINUTE:
-            if (DigitalInputWasActivated(board->increment) && delay_count >= 3000) {
-                delay_count = 0;
+            if (DigitalInputWasActivated(board->increment)) {
                 BCDIncrement(minute, MINUTE_LIMIT);
                 inactivity_count = 0;
             }
-            if (DigitalInputWasActivated(board->decrement) && delay_count >= 3000) {
-                delay_count = 0;
+            if (DigitalInputWasActivated(board->decrement)) {
                 BCDDecrement(minute, MINUTE_LIMIT);
                 inactivity_count = 0;
             }
-            if (DigitalInputWasActivated(board->accept) && delay_count >= 3000) {
-                delay_count = 0;
+            if (DigitalInputWasActivated(board->accept)) {
                 ChangeMode(SET_TIME_HOUR);
                 inactivity_count = 0;
             }
-            if ((DigitalInputWasActivated(board->cancel) && delay_count >= 3000) || inactivity_count >= 30000) {
+            if (DigitalInputWasActivated(board->cancel) || inactivity_count >= 30000) {
                 inactivity_count = 0;
-                delay_count = 0;
                 if (ClockGetTime(clock, &time)) {
                     ChangeMode(SHOW_TIME);
                 } else {
@@ -306,27 +328,23 @@ int main(void) {
             break;
 
         case SET_TIME_HOUR:
-            if (DigitalInputWasActivated(board->increment) && delay_count >= 3000) {
-                delay_count = 0;
+            if (DigitalInputWasActivated(board->increment)) {
                 inactivity_count = 0;
                 BCDIncrement(hour, HOUR_LIMIT);
             }
-            if (DigitalInputWasActivated(board->decrement) && delay_count >= 3000) {
-                delay_count = 0;
+            if (DigitalInputWasActivated(board->decrement)) {
                 inactivity_count = 0;
                 BCDDecrement(hour, HOUR_LIMIT);
             }
-            if (DigitalInputWasActivated(board->accept) && delay_count >= 3000) {
-                delay_count = 0;
+            if (DigitalInputWasActivated(board->accept)) {
                 inactivity_count = 0;
                 HourAndMinuteToBCD(hour, minute, digits);
                 BCDToClockTime(&time, digits);
                 ClockSetTime(clock, &time);
                 ChangeMode(SHOW_TIME);
             }
-            if ((DigitalInputWasActivated(board->cancel) && delay_count >= 3000) || inactivity_count >= 30000) {
+            if (DigitalInputWasActivated(board->cancel) || inactivity_count >= 30000) {
                 inactivity_count = 0;
-                delay_count = 0;
                 if (ClockGetTime(clock, &time)) {
                     ChangeMode(SHOW_TIME);
                 } else {
@@ -338,23 +356,19 @@ int main(void) {
             break;
 
         case SET_ALARM_MINUTE:
-            if (DigitalInputWasActivated(board->increment) && delay_count >= 3000) {
-                delay_count = 0;
+            if (DigitalInputWasActivated(board->increment)) {
                 inactivity_count = 0;
                 BCDIncrement(minute, MINUTE_LIMIT);
             }
-            if (DigitalInputWasActivated(board->decrement) && delay_count >= 3000) {
-                delay_count = 0;
+            if (DigitalInputWasActivated(board->decrement)) {
                 inactivity_count = 0;
                 BCDDecrement(minute, MINUTE_LIMIT);
             }
-            if (DigitalInputWasActivated(board->accept) && delay_count >= 3000) {
-                delay_count = 0;
+            if (DigitalInputWasActivated(board->accept)) {
                 inactivity_count = 0;
                 ChangeMode(SET_ALARM_HOUR);
             }
-            if ((DigitalInputWasActivated(board->cancel) && delay_count >= 3000) || inactivity_count >= 30000) {
-                delay_count = 0;
+            if (DigitalInputWasActivated(board->cancel) || inactivity_count >= 30000) {
                 inactivity_count = 0;
                 ChangeMode(SHOW_TIME);
             }
@@ -401,8 +415,9 @@ void SysTick_Handler(void) {
     DisplayRefresh(board->display);
     ClockNewTick(clock);
     count = (count + 1) % 1000;
-    delay_count++;
+    system_ticks++;
     inactivity_count++;
+
     if (mode == SHOW_TIME) {
         ClockGetTime(clock, &time);
         ClockTimeToBCD(&time, bcd);
