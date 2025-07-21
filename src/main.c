@@ -169,9 +169,17 @@ void ChangeMode(mode_t value) {
 
 static void AlarmActivate(clock_t clock) {
     (void)clock;
+    DigitalOutputActivate(board->buzzer);
+    DigitalOutputActivate(board->led1);
+    DigitalOutputActivate(board->led2);
+    DigitalOutputActivate(board->led3);
 }
 
 static void AlarmDeactivate(clock_t clock) {
+    DigitalOutputDeactivate(board->buzzer);
+    DigitalOutputDeactivate(board->led1);
+    DigitalOutputDeactivate(board->led2);
+    DigitalOutputDeactivate(board->led3);
     (void)clock;
 }
 

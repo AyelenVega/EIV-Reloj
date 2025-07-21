@@ -41,6 +41,9 @@ extern "C" {
 //! Representa las entradas y salidas digitales de la placa
 typedef struct board_s {
     digital_output_t buzzer;
+    digital_output_t led1;
+    digital_output_t led2;
+    digital_output_t led3;
     digital_input_t set_time;
     digital_input_t set_alarm;
     digital_input_t decrement;

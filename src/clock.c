@@ -219,6 +219,7 @@ bool ClockPostponeAlarm(clock_t self) {
 
     self->alarm_postponed_times++;
     self->alarm_active = false;
+    self->driver->AlarmDeactivate(self);
     uint32_t alarm_seconds = BCDToSeconds(&self->alarm_time);
     alarm_seconds = (alarm_seconds + postpone_seconds) % (24 * 3600);
     SecondsToBCD(&self->alarm_time, alarm_seconds);
