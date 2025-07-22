@@ -49,10 +49,10 @@ typedef union {
 typedef struct clock_s * clock_t;
 
 //! Puntero a una funcion que activa la alarma
-typedef void (*clock_alarm_activate_t)(clock_t);
+typedef void (*clock_alarm_activate_t)(void);
 
 //! Puntero a una funcion que desactiva la alarma
-typedef void (*clock_alarm_deactivate_t)(clock_t);
+typedef void (*clock_alarm_deactivate_t)(void);
 
 //! Driver
 typedef struct clock_alarm_driver_s {
@@ -64,10 +64,11 @@ typedef struct clock_alarm_driver_s {
 /* === Public function declarations ================================================================================ */
 /**
  * @brief Crea el objeto reloj
- *
- * @param ticks_per_second cantidad de ticks por segundo
- * @param driver_alarm Driver para controlar alarma
- * @return clock_t Puntero a objeto creado
+ * *
+ * @param ticks_per_second Cantidad de ticks por segundo
+ * @param alarm_postponed_minutes Cantidad de minutos que se puedo posponer la alarma
+ * @param driver_alarm Driver de la alarma
+ * @return clock_t Puntero al objeto creado
  */
 clock_t ClockCreate(uint32_t ticks_per_second, uint32_t alarm_postponed_minutes, clock_alarm_driver_t driver_alarm);
 
@@ -76,8 +77,8 @@ clock_t ClockCreate(uint32_t ticks_per_second, uint32_t alarm_postponed_minutes,
  *
  * @param self Puntero al objeto reloj
  * @param result Hora actual
- * @return true Si se pudo obtener la hora
- * @return false Si no se pudo obtener la hora
+ * @return true Si la hora es válida
+ * @return false Si la hora es invalida
  */
 bool ClockGetTime(clock_t self, clock_time_t * result);
 /**
@@ -85,8 +86,8 @@ bool ClockGetTime(clock_t self, clock_time_t * result);
  *
  * @param self Puntero al objeto reloj
  * @param new_time Hora a la que se setara el reloj
- * @return true Si se pudo establecer la hora
- * @return false Si NO se pudo establecer la hora
+ * @return true Si la hora que se intento fijar es válida
+ * @return false Si la hora que se intento fijar NO es válida
  */
 bool ClockSetTime(clock_t self, const clock_time_t * new_time);
 
@@ -102,8 +103,8 @@ bool ClockNewTick(clock_t self);
  *
  * @param self Puntero al objeto reloj
  * @param new_alarm Hora a la que se seteará la alarma
- * @return true Si se pudo setear
- * @return false Si NO se pudo setear
+ * @return true Si la alarma que se intentó fijar es válida
+ * @return false Si la alarma que se intentó fijar NO es válida
  */
 bool ClockSetAlarm(clock_t self, const clock_time_t * new_alarm);
 
@@ -112,8 +113,8 @@ bool ClockSetAlarm(clock_t self, const clock_time_t * new_alarm);
  *
  * @param self Puntero al objeto reloj
  * @param alarm_time Hora a la que esta seteada la alarma
- * @return true Si la hora leida es válida
- * @return false Si la hora leida no es válida
+ * @return true Si la alarma leida es válida
+ * @return false Si la alarma leida no es válida
  */
 bool ClockGetAlarm(clock_t self, clock_time_t * alarm_time);
 /**
@@ -154,7 +155,7 @@ bool ClockAlarmEnable(clock_t self, bool enable);
  */
 bool ClockIsAlarmEnabled(clock_t self);
 /**
- * @brief Pospone la alarma una n cantidad de segundos
+ * @brief Pospone la alarma una cantidad fija de minutos
  *
  * @param self Puntero a objeto relon
  * @return true Si se pudo posponer la alarma

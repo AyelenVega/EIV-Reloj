@@ -155,6 +155,7 @@ bool ClockSetAlarm(clock_t self, const clock_time_t * new_alarm) {
         self->valid_alarm = true;
         self->alarm_enable = true;
         self->alarm_active = false;
+        self->driver->AlarmDeactivate();
         memcpy(&self->alarm_time, new_alarm, sizeof(clock_time_t));
     } else {
         self->valid_alarm = false;
@@ -186,11 +187,11 @@ bool ClockActivateAlarm(clock_t self, bool activate) {
         if (memcmp(self->current_time.bcd, self->alarm_time.bcd, sizeof(clock_time_t)) == 0 &&
             self->alarm_enable == true) {
             self->alarm_active = true;
-            self->driver->AlarmActivate(self);
+            self->driver->AlarmActivate();
         }
     } else {
         self->alarm_active = false;
-        self->driver->AlarmDeactivate(self);
+        self->driver->AlarmDeactivate();
         alarm_seconds = (alarm_seconds - postpone_seconds) % (24 * 3600);
         SecondsToBCD(&self->alarm_time, alarm_seconds);
         self->alarm_postponed_times = 0;
@@ -219,7 +220,7 @@ bool ClockPostponeAlarm(clock_t self) {
 
     self->alarm_postponed_times++;
     self->alarm_active = false;
-    self->driver->AlarmDeactivate(self);
+    self->driver->AlarmDeactivate();
     uint32_t alarm_seconds = BCDToSeconds(&self->alarm_time);
     alarm_seconds = (alarm_seconds + postpone_seconds) % (24 * 3600);
     SecondsToBCD(&self->alarm_time, alarm_seconds);
