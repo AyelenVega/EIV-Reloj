@@ -189,6 +189,16 @@ bool ClockActivateAlarm(clock_t self, bool activate) {
             self->alarm_active = true;
             self->driver->AlarmActivate();
         }
+        /*
+        Cuando se deshabilita la alarma despues de haberla pospuesto, no deberia sonar a la hora pospuesta sino a la
+        hora original
+        */
+        if (self->alarm_enable == false) {
+            alarm_seconds = (alarm_seconds - postpone_seconds) % (24 * 3600);
+            SecondsToBCD(&self->alarm_time, alarm_seconds);
+            self->alarm_postponed_times = 0;
+        }
+
     } else {
         self->alarm_active = false;
         self->driver->AlarmDeactivate();

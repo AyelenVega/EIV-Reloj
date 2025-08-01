@@ -355,6 +355,7 @@ int main(void) {
     uint8_t digits[4] = {0};
     button_state_t button_set_time = {false, false, 0};
     button_state_t button_set_alarm = {false, false, 0};
+    bool alarm_already_set = false;
 
     clock = ClockCreate(TICKS_PER_SECOND, ALARM_POSTPONE_MINUTES, &driver_alarm);
     board = BoardCreate();
@@ -371,7 +372,6 @@ int main(void) {
 
             if (WasButtonPressed(board->set_time, &button_set_time, DELAY_SET_TIME)) {
                 ChangeMode(SET_TIME_MINUTE);
-                // ResetButton(&button_set_time);
             }
             break;
 
@@ -383,7 +383,6 @@ int main(void) {
 
             if (WasButtonPressed(board->set_time, &button_set_time, DELAY_SET_TIME)) {
                 ChangeMode(SET_TIME_MINUTE);
-                // ResetButton(&button_set_time);
             }
 
             if (WasButtonPressed(board->set_alarm, &button_set_alarm, DELAY_SET_ALARM)) {
@@ -392,11 +391,11 @@ int main(void) {
                     BCDtoHourAndMinute(hour, minute, digits);
                 }
                 ChangeMode(SET_ALARM_MINUTE);
-                // ResetButton(&button_set_alarm);
                 DisplayWrite(board->display, digits, sizeof(digits));
             }
 
-            if (!ClockIsAlarmActive(clock)) {
+            if (!ClockIsAlarmActive(clock) && alarm_already_set) { // Solamente puedo habilitar y deshabilitar la alarma
+                                                                   // cuando ya se la seteo por primera vez
                 if (DigitalInputWasActivated(board->accept)) {
                     ClockAlarmEnable(clock, true);
                 }
@@ -498,6 +497,7 @@ int main(void) {
             }
             if (DigitalInputWasActivated(board->accept)) {
                 inactivity_count = 0;
+                alarm_already_set = true;
                 HourAndMinuteToBCD(hour, minute, digits);
                 BCDToClockTime(&time, digits);
                 ClockSetAlarm(clock, &time);

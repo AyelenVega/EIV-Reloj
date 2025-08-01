@@ -75,10 +75,10 @@ Alarma
 static void SimulateSeconds(clock_t clock, uint32_t seconds);
 
 //! Funcion para simular la activacion de la alarma
-static void AlarmActivate(clock_t clock);
+static void AlarmActivate(void);
 
 //! Funcion para simular la desactivacion de la alarma
-static void AlarmDeactivate(clock_t clock);
+static void AlarmDeactivate(void);
 
 /* === Private variable definitions ================================================================================ */
 
@@ -96,12 +96,10 @@ static void SimulateSeconds(clock_t clock, uint32_t seconds) {
     }
 }
 
-static void AlarmActivate(clock_t clock) {
-    (void)clock;
+static void AlarmActivate() {
 }
 
-static void AlarmDeactivate(clock_t clock) {
-    (void)clock;
+static void AlarmDeactivate() {
 }
 
 /* === Public function implementation ============================================================================== */
@@ -327,6 +325,28 @@ void test_postpone_alarm_and_wait_until_next_day_to_ring_at_original_time(void) 
     ClockActivateAlarm(clock, false);
     TEST_ASSERT_FALSE(ClockIsAlarmActive(clock));
     SimulateSeconds(clock, 86400 - (60 * CLOCK_ALARM_POSTPONED_MINUTES * 2));
+    TEST_ASSERT_TRUE(ClockIsAlarmActive(clock));
+}
+
+// Posponer alarma, deshabilitarla, habilitarla y fijarse que NO suene a la hora pospuesta pero si a la hora original
+void test_postpone_alarm_disable_and_enable(void) {
+    static const clock_time_t new_alarm = {.time = {.hours = {1, 2}, .minutes = {0, 3}, .seconds = {0, 0}}};
+    static const clock_time_t current_time = {.time = {.hours = {1, 2}, .minutes = {9, 2}, .seconds = {8, 5}}};
+
+    ClockSetTime(clock, &current_time);
+    ClockSetAlarm(clock, &new_alarm);
+    SimulateSeconds(clock, 2);
+    TEST_ASSERT_TRUE(ClockIsAlarmActive(clock));
+    ClockPostponeAlarm(clock);
+    TEST_ASSERT_FALSE(ClockIsAlarmActive(clock));
+    ClockAlarmEnable(clock, false);
+    TEST_ASSERT_FALSE(ClockIsAlarmEnabled(clock));
+    SimulateSeconds(clock, 1);
+    ClockAlarmEnable(clock, true);
+    TEST_ASSERT_TRUE(ClockIsAlarmEnabled(clock));
+    SimulateSeconds(clock, 60 * CLOCK_ALARM_POSTPONED_MINUTES - 1);
+    TEST_ASSERT_FALSE(ClockIsAlarmActive(clock));
+    SimulateSeconds(clock, 86400 - (60 * CLOCK_ALARM_POSTPONED_MINUTES));
     TEST_ASSERT_TRUE(ClockIsAlarmActive(clock));
 }
 
