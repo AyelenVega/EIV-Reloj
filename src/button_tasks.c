@@ -23,6 +23,7 @@ SPDX-License-Identifier: MIT
 
 /* === Headers files inclusions =============================================================== */
 #include "button_tasks.h"
+
 /* === Macros definitions ====================================================================== */
 #define BUTTON_SCAN_DELAY 100
 
@@ -37,7 +38,7 @@ SPDX-License-Identifier: MIT
 void ButtonTask(void * pointer) {
     button_task_args_t args = pointer;
 
-    while (1) {
+    while (true) {
         while (!DigitalInputGetIsActive(args->button)) {
             vTaskDelay(pdMS_TO_TICKS(BUTTON_SCAN_DELAY));
         };

@@ -209,20 +209,18 @@ void ChangeMode(mode_t value, clock_task_args_t args) {
 }
 
 /* === Public function implementation ========================================================= */
-/*
- */
 void ClockTask(void * pointer) {
-    static clock_time_t time = {0};
     clock_task_args_t args = pointer;
     EventBits_t clock_events;
 
     static uint8_t hour[2] = {0};
     static uint8_t minute[2] = {0};
     static uint8_t digits[4] = {0};
+    static clock_time_t time = {0};
     bool alarm_already_set = false;
     static bool point_state_show_time = false;
-    args->current_mode = UNSET_TIME;
 
+    args->current_mode = UNSET_TIME;
     ChangeMode(UNSET_TIME, args);
 
     while (true) {
@@ -324,7 +322,7 @@ void ClockTask(void * pointer) {
                 DisplayWrite(args->board->display, digits, sizeof(digits));
                 xSemaphoreGive(args->display_mutex);
             }
-            if (clock_events & BUTTON_EVENT_2) { // Incrementra
+            if (clock_events & BUTTON_EVENT_2) { // Incrementar
                 BCDIncrement(hour, HOUR_LIMIT);
             }
             if (clock_events & BUTTON_EVENT_3) { // Decrementar
@@ -354,7 +352,7 @@ void ClockTask(void * pointer) {
                 DisplayWrite(args->board->display, digits, sizeof(digits));
                 xSemaphoreGive(args->display_mutex);
             }
-            if (clock_events & BUTTON_EVENT_2) { // Incrementra
+            if (clock_events & BUTTON_EVENT_2) { // Incrementar
                 BCDIncrement(minute, MINUTE_LIMIT);
             }
             if (clock_events & BUTTON_EVENT_3) { // Decrementar
@@ -364,11 +362,7 @@ void ClockTask(void * pointer) {
                 ChangeMode(SET_ALARM_HOUR, args);
             }
             if (clock_events & (BUTTON_EVENT_1 | TICKS_EVENTS_7)) { // cancelar
-                if (ClockGetTime(args->clock, &time)) {
-                    ChangeMode(SHOW_TIME, args);
-                } else {
-                    ChangeMode(UNSET_TIME, args);
-                }
+                ChangeMode(SHOW_TIME, args);
             }
 
             break;
@@ -378,7 +372,7 @@ void ClockTask(void * pointer) {
                 DisplayWrite(args->board->display, digits, sizeof(digits));
                 xSemaphoreGive(args->display_mutex);
             }
-            if (clock_events & BUTTON_EVENT_2) { // Incrementra
+            if (clock_events & BUTTON_EVENT_2) { // Incrementar
                 BCDIncrement(hour, HOUR_LIMIT);
             }
             if (clock_events & BUTTON_EVENT_3) { // Decrementar
@@ -395,7 +389,6 @@ void ClockTask(void * pointer) {
                 ChangeMode(SHOW_TIME, args);
             }
             if (clock_events & (BUTTON_EVENT_1 | TICKS_EVENTS_7)) { // cancelar
-
                 ChangeMode(SHOW_TIME, args);
             }
 
