@@ -17,38 +17,60 @@ OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 SPDX-License-Identifier: MIT
 *********************************************************************************************************************/
 
-/** @file  main.c
+/** @file  alarm_driver.c
  ** @brief
  **/
 
 /* === Headers files inclusions =============================================================== */
-#include "tasks_init.h"
 #include "alarm_driver.h"
 
 /* === Macros definitions ====================================================================== */
-#define ALARM_POSTPONE_MINUTES 5    ///< Cantidad de minutos que se pospone la alarma
-#define TICKS_PER_SECOND       1000 ///< Cantidad de ticks por segundo
 
 /* === Private data type declarations ========================================================== */
-static board_t board;
-static clock_t clock;
+static board_t board_local;
 
 /* === Private variable declarations =========================================================== */
 
 /* === Private function declarations =========================================================== */
+/**
+ * @brief Activa la alarma
+ *
+ */
+static void AlarmActivate(void);
+
+/**
+ * @brief Desactiva la alarma
+ *
+ */
+static void AlarmDeactivate(void);
 
 /* === Public variable definitions ============================================================= */
 
 /* === Private variable definitions ============================================================ */
 
 /* === Private function implementation ========================================================= */
+static void AlarmActivate(void) {
+    DigitalOutputActivate(board_local->buzzer);
+    DigitalOutputActivate(board_local->led1);
+    DigitalOutputActivate(board_local->led2);
+    DigitalOutputActivate(board_local->led3);
+}
+
+static void AlarmDeactivate(void) {
+    DigitalOutputDeactivate(board_local->buzzer);
+    DigitalOutputDeactivate(board_local->led1);
+    DigitalOutputDeactivate(board_local->led2);
+    DigitalOutputDeactivate(board_local->led3);
+}
 
 /* === Public function implementation ========================================================= */
-int main(void) {
-    board = BoardCreate();
-    clock = ClockCreate(TICKS_PER_SECOND, ALARM_POSTPONE_MINUTES, AlarmDriverCreate(board));
-    TasksInit(clock, board);
-    vTaskStartScheduler();
+clock_alarm_driver_t AlarmDriverCreate(board_t board) {
+    static const struct clock_alarm_driver_s driver = {
+        .AlarmActivate = AlarmActivate,
+        .AlarmDeactivate = AlarmDeactivate,
+    };
+    board_local = board;
+    return &driver;
 }
 
 /* === End of documentation ==================================================================== */

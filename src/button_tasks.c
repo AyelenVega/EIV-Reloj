@@ -17,7 +17,7 @@ OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 SPDX-License-Identifier: MIT
 *********************************************************************************************************************/
 
-/** @file  ButtonTasks.c
+/** @file  button_tasks.c
  ** @brief
  **/
 
@@ -26,6 +26,12 @@ SPDX-License-Identifier: MIT
 
 /* === Macros definitions ====================================================================== */
 #define BUTTON_SCAN_DELAY 100
+
+/* === Private data type declarations ========================================================== */
+
+/* === Private variable declarations =========================================================== */
+
+/* === Private function declarations =========================================================== */
 
 /* === Public variable definitions ============================================================= */
 
