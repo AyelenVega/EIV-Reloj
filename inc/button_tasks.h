@@ -47,16 +47,43 @@ extern "C" {
 
 #define BUTTON_TASK_STACK_SIZE (2 * configMINIMAL_STACK_SIZE)
 /* === Public data type declarations =============================================================================== */
+/**
+ * @brief Estructura que representa el estado de un botón
+ *
+ */
+typedef struct {
+    bool pressed;          ///< Indica si el botón esta siendo presionado
+    bool already_pressed;  ///< Indica si ya fue registrado como presionado
+    TickType_t start_time; ///< Momento en que se comenzo a presionar el botón
+    uint32_t delay_ms;
+} button_state_t;
+
+/**
+ * @brief Estructura con los argumentos que se deben pasar a las tareas relacionadas con los botones
+ *
+ */
 typedef struct button_task_args_s {
     EventGroupHandle_t clock_events;
     uint8_t event_bit;
     digital_input_t button;
+    button_state_t * state;
 } * button_task_args_t;
 
 /* === Public variable declarations ================================================================================ */
 
 /* === Public function declarations ================================================================================ */
+/**
+ * @brief Genera un evento cuando un boton fue presionado
+ *
+ * @param args
+ */
 void ButtonTask(void * args);
+/**
+ * @brief Genera un evento cuando un boton fue presionado durante cierta cantidad de tiempo
+ *
+ * @param args
+ */
+void ButtonPressedForLongTimeTask(void * args);
 
 /* === End of conditional blocks =================================================================================== */
 

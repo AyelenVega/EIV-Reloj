@@ -23,16 +23,8 @@ SPDX-License-Identifier: MIT
 
 /* === Headers files inclusions =============================================================== */
 #include "button_tasks.h"
-#include <string.h>
-
 /* === Macros definitions ====================================================================== */
 #define BUTTON_SCAN_DELAY 100
-
-/* === Private data type declarations ========================================================== */
-
-/* === Private variable declarations =========================================================== */
-
-/* === Private function declarations =========================================================== */
 
 /* === Public variable definitions ============================================================= */
 
@@ -41,6 +33,7 @@ SPDX-License-Identifier: MIT
 /* === Private function implementation ========================================================= */
 
 /* === Public function implementation ========================================================= */
+
 void ButtonTask(void * pointer) {
     button_task_args_t args = pointer;
 
@@ -54,6 +47,29 @@ void ButtonTask(void * pointer) {
         while (DigitalInputGetIsActive(args->button)) {
             vTaskDelay(pdMS_TO_TICKS(BUTTON_SCAN_DELAY));
         };
+    }
+}
+void ButtonPressedForLongTimeTask(void * pointer) {
+    button_task_args_t args = pointer;
+
+    while (true) {
+        if (DigitalInputGetIsActive(args->button)) {
+            if (!args->state->pressed) {
+                args->state->pressed = true;
+                args->state->start_time = xTaskGetTickCount();
+            } else {
+                if ((xTaskGetTickCount() - args->state->start_time) >= pdMS_TO_TICKS(args->state->delay_ms) &&
+                    !args->state->already_pressed) {
+                    args->state->already_pressed = true;
+                    xEventGroupSetBits(args->clock_events, args->event_bit);
+                }
+            }
+        } else {
+            args->state->pressed = false;
+            args->state->already_pressed = false;
+            args->state->start_time = 0;
+        }
+        vTaskDelay(pdMS_TO_TICKS(BUTTON_SCAN_DELAY));
     }
 }
 

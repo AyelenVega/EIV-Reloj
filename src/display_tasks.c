@@ -55,8 +55,8 @@ void RefreshDisplay(void * pointer) {
         }
         if (xSemaphoreTake(args->display_mutex, portMAX_DELAY)) {
             DisplayRefresh(args->board->display);
+            xSemaphoreGive(args->display_mutex);
         }
-        xSemaphoreGive(args->display_mutex);
         ClockNewTick(args->clock);
         half_second_count++;
         thirty_seconds_count++;

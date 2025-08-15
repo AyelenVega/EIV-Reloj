@@ -25,8 +25,6 @@ SPDX-License-Identifier: MIT
 #include "clock_tasks.h"
 #include "button_tasks.h"
 #include "display_tasks.h"
-#include "clock.h"
-
 /* === Macros definitions ====================================================================== */
 #define FLASH_FREQUENCY 200 ///< Cantidad de veces que se quiere que el digito este prendido
 
@@ -35,41 +33,8 @@ SPDX-License-Identifier: MIT
 /* === Private variable declarations =========================================================== */
 static const uint8_t MINUTE_LIMIT[] = {6, 0};
 static const uint8_t HOUR_LIMIT[] = {2, 4};
-mode_t current_mode;
 
 /* === Private function declarations =========================================================== */
-
-/**
- * @brief Activa la alarma
- *
- */
-static void AlarmActivate(void);
-
-/**
- * @brief Desactiva la alarma
- *
- */
-static void AlarmDeactivate(void);
-
-/**
- * @brief Resetea el estado de botón
- *
- * @param button_state Estado del botón
- * @return true Si se pudo resetear el estado
- * @return false Si NO se pudo resetear el estado
- */
-bool ResetButton(button_state_t * button_state);
-
-/**
- * @brief Verifica si un botón estuvo presionado una cierta cantidad de tiempo
- *
- * @param button Boton que se esta presionando
- * @param button_state Estado del boton
- * @param delay Cantidad de tiempo que debe estar presionado (en ms)
- * @return true Si estuvo presionado el tiempo requerido
- * @return false Si NO estuvo presionado el tiempo requerido
- */
-bool WasButtonPressed(digital_input_t button, button_state_t * button_state, uint32_t delay);
 
 /**
  * @brief Incrementa el valor de un numero en BCD respetando un limite maximo
@@ -127,52 +92,10 @@ void BCDtoHourAndMinute(uint8_t hour[], uint8_t minute[], uint8_t BCD[]);
 void HourAndMinuteToBCD(uint8_t hour[], uint8_t minute[], uint8_t BCD[]);
 
 /* === Public variable definitions ============================================================= */
-/**
- * @brief Estructura que representa el driver de la alarma
- *
- */
-const struct clock_alarm_driver_s driver_alarm = {
-    .AlarmActivate = AlarmActivate,
-    .AlarmDeactivate = AlarmDeactivate,
-};
 
 /* === Private variable definitions ============================================================ */
 
 /* === Private function implementation ========================================================= */
-
-bool WasButtonPressed(digital_input_t button, button_state_t * button_state, uint32_t delay) {
-    return false;
-}
-
-bool ResetButton(button_state_t * button_state) {
-    if (button_state != NULL) {
-        button_state->pressed = false;
-        button_state->already_pressed = false;
-        button_state->start_time = 0;
-        return true;
-    } else {
-        return false;
-    }
-}
-
-static void AlarmActivate(void) {
-    /*
-    DigitalOutputActivate(board->buzzer);
-    DigitalOutputActivate(board->led1);
-    DigitalOutputActivate(board->led2);
-    DigitalOutputActivate(board->led3);
-    */
-}
-
-static void AlarmDeactivate(void) {
-    /*
-    DigitalOutputDeactivate(board->buzzer);
-    DigitalOutputDeactivate(board->led1);
-    DigitalOutputDeactivate(board->led2);
-    DigitalOutputDeactivate(board->led3);
-    */
-}
-
 void BCDIncrement(uint8_t number[2], const uint8_t limit[2]) {
     number[1]++;
     if (number[1] > 9) {
@@ -233,55 +156,55 @@ void HourAndMinuteToBCD(uint8_t hour[], uint8_t minute[], uint8_t BCD[]) {
     BCD[3] = minute[1];
 }
 
-void ChangeMode(mode_t value, SemaphoreHandle_t mutex, board_t board) {
-    current_mode = value;
-    if (xSemaphoreTake(mutex, portMAX_DELAY)) {
-        switch (current_mode) {
+void ChangeMode(mode_t value, clock_task_args_t args) {
+    args->current_mode = value;
+    if (xSemaphoreTake(args->display_mutex, portMAX_DELAY)) {
+        switch (args->current_mode) {
         case UNSET_TIME:
-            DisplayFlashDigits(board->display, 0, 3, FLASH_FREQUENCY);
-            DisplayFlashPoint(board->display, 0b00000010, FLASH_FREQUENCY);
-            DisplaySetPoint(board->display, 0, false);
-            DisplaySetPoint(board->display, 2, false);
-            DisplaySetPoint(board->display, 3, false);
+            DisplayFlashDigits(args->board->display, 0, 3, FLASH_FREQUENCY);
+            DisplayFlashPoint(args->board->display, 0b00000010, FLASH_FREQUENCY);
+            DisplaySetPoint(args->board->display, 0, false);
+            DisplaySetPoint(args->board->display, 2, false);
+            DisplaySetPoint(args->board->display, 3, false);
             break;
         case SHOW_TIME:
-            DisplayFlashDigits(board->display, 0, 0, 0);
-            DisplaySetPoint(board->display, 2, false);
+            DisplayFlashDigits(args->board->display, 0, 0, 0);
+            DisplaySetPoint(args->board->display, 2, false);
             break;
         case SET_TIME_MINUTE:
-            DisplayFlashDigits(board->display, 2, 3, FLASH_FREQUENCY);
-            DisplayFlashPoint(board->display, 0b00001111, 0);
-            DisplaySetPoint(board->display, 0, false);
-            DisplaySetPoint(board->display, 1, false);
-            DisplaySetPoint(board->display, 2, false);
-            DisplaySetPoint(board->display, 3, false);
+            DisplayFlashDigits(args->board->display, 2, 3, FLASH_FREQUENCY);
+            DisplayFlashPoint(args->board->display, 0b00001111, 0);
+            DisplaySetPoint(args->board->display, 0, false);
+            DisplaySetPoint(args->board->display, 1, false);
+            DisplaySetPoint(args->board->display, 2, false);
+            DisplaySetPoint(args->board->display, 3, false);
             break;
         case SET_TIME_HOUR:
-            DisplayFlashDigits(board->display, 0, 1, FLASH_FREQUENCY);
-            DisplayFlashPoint(board->display, 0b00001111, 0);
-            DisplaySetPoint(board->display, 0, false);
-            DisplaySetPoint(board->display, 1, false);
-            DisplaySetPoint(board->display, 2, false);
-            DisplaySetPoint(board->display, 3, false);
+            DisplayFlashDigits(args->board->display, 0, 1, FLASH_FREQUENCY);
+            DisplayFlashPoint(args->board->display, 0b00001111, 0);
+            DisplaySetPoint(args->board->display, 0, false);
+            DisplaySetPoint(args->board->display, 1, false);
+            DisplaySetPoint(args->board->display, 2, false);
+            DisplaySetPoint(args->board->display, 3, false);
             break;
         case SET_ALARM_MINUTE:
-            DisplayFlashDigits(board->display, 2, 3, FLASH_FREQUENCY);
-            DisplaySetPoint(board->display, 0, true);
-            DisplaySetPoint(board->display, 1, true);
-            DisplaySetPoint(board->display, 2, true);
-            DisplaySetPoint(board->display, 3, true);
+            DisplayFlashDigits(args->board->display, 2, 3, FLASH_FREQUENCY);
+            DisplaySetPoint(args->board->display, 0, true);
+            DisplaySetPoint(args->board->display, 1, true);
+            DisplaySetPoint(args->board->display, 2, true);
+            DisplaySetPoint(args->board->display, 3, true);
             break;
         case SET_ALARM_HOUR:
-            DisplayFlashDigits(board->display, 0, 1, FLASH_FREQUENCY);
-            DisplaySetPoint(board->display, 0, true);
-            DisplaySetPoint(board->display, 1, true);
-            DisplaySetPoint(board->display, 2, true);
-            DisplaySetPoint(board->display, 3, true);
+            DisplayFlashDigits(args->board->display, 0, 1, FLASH_FREQUENCY);
+            DisplaySetPoint(args->board->display, 0, true);
+            DisplaySetPoint(args->board->display, 1, true);
+            DisplaySetPoint(args->board->display, 2, true);
+            DisplaySetPoint(args->board->display, 3, true);
             break;
         default:
             break;
         }
-        xSemaphoreGive(mutex);
+        xSemaphoreGive(args->display_mutex);
     }
 }
 
@@ -291,7 +214,6 @@ void ChangeMode(mode_t value, SemaphoreHandle_t mutex, board_t board) {
 void ClockTask(void * pointer) {
     static clock_time_t time = {0};
     clock_task_args_t args = pointer;
-    current_mode = UNSET_TIME;
     EventBits_t clock_events;
 
     static uint8_t hour[2] = {0};
@@ -299,21 +221,22 @@ void ClockTask(void * pointer) {
     static uint8_t digits[4] = {0};
     bool alarm_already_set = false;
     static bool point_state_show_time = false;
+    args->current_mode = UNSET_TIME;
 
-    ChangeMode(UNSET_TIME, args->display_mutex, args->board);
+    ChangeMode(UNSET_TIME, args);
 
     while (true) {
 
         xEventGroupClearBits(args->clock_events, ANY_EVENT);
 
-        clock_events = xEventGroupWaitBits(args->clock_events, TICKS_EVENTS_6, pdTRUE, pdFALSE, pdMS_TO_TICKS(100));
+        clock_events = xEventGroupWaitBits(args->clock_events, ANY_EVENT, pdTRUE, pdFALSE, pdMS_TO_TICKS(100));
         if (clock_events &
             (BUTTON_EVENT_0 | BUTTON_EVENT_1 | BUTTON_EVENT_2 | BUTTON_EVENT_3 | BUTTON_EVENT_4 | BUTTON_EVENT_5)) {
             xEventGroupSetBits(args->clock_events, TICKS_EVENTS_8);
         }
-        switch (current_mode) {
+        switch (args->current_mode) {
         case UNSET_TIME:
-            if (xSemaphoreTake(args->display_mutex, portMAX_DELAY)) {
+            if (xSemaphoreTake(args->display_mutex, pdMS_TO_TICKS(100))) {
                 ClockGetTime(args->clock, &time);
                 ClockTimeToBCD(&time, digits);
                 BCDtoHourAndMinute(hour, minute, digits);
@@ -321,11 +244,11 @@ void ClockTask(void * pointer) {
                 xSemaphoreGive(args->display_mutex);
             }
             if (clock_events & BUTTON_EVENT_4) {
-                ChangeMode(SET_TIME_MINUTE, args->display_mutex, args->board);
+                ChangeMode(SET_TIME_MINUTE, args);
             }
             break;
         case SHOW_TIME:
-            if (xSemaphoreTake(args->display_mutex, portMAX_DELAY)) {
+            if (xSemaphoreTake(args->display_mutex, pdMS_TO_TICKS(100))) {
                 ClockGetTime(args->clock, &time);
                 ClockTimeToBCD(&time, digits);
                 BCDtoHourAndMinute(hour, minute, digits);
@@ -336,14 +259,14 @@ void ClockTask(void * pointer) {
                     point_state_show_time = !point_state_show_time;
                     DisplaySetPoint(args->board->display, 1, point_state_show_time);
                 }
+                xSemaphoreGive(args->display_mutex);
             }
-            xSemaphoreGive(args->display_mutex);
 
             if (clock_events & BUTTON_EVENT_4) {
-                ChangeMode(SET_TIME_MINUTE, args->display_mutex, args->board);
+                ChangeMode(SET_TIME_MINUTE, args);
             }
             if (clock_events & BUTTON_EVENT_5) {
-                if (xSemaphoreTake(args->display_mutex, portMAX_DELAY)) {
+                if (xSemaphoreTake(args->display_mutex, pdMS_TO_TICKS(100))) {
                     ClockGetAlarm(args->clock, &time);
                     ClockTimeToBCD(&time, digits);
                     BCDtoHourAndMinute(hour, minute, digits);
@@ -351,7 +274,7 @@ void ClockTask(void * pointer) {
                     DisplayWrite(args->board->display, digits, sizeof(digits));
                     xSemaphoreGive(args->display_mutex);
                 }
-                ChangeMode(SET_ALARM_MINUTE, args->display_mutex, args->board);
+                ChangeMode(SET_ALARM_MINUTE, args);
             }
             if (!ClockIsAlarmActive(args->clock) && alarm_already_set) { // Solamente puedo habilitar y deshabilitar la
                                                                          // alarma cuando ya se la seteo por primera vez
@@ -372,7 +295,7 @@ void ClockTask(void * pointer) {
             break;
 
         case SET_TIME_MINUTE:
-            if (xSemaphoreTake(args->display_mutex, portMAX_DELAY)) {
+            if (xSemaphoreTake(args->display_mutex, pdMS_TO_TICKS(100))) {
                 HourAndMinuteToBCD(hour, minute, digits);
                 DisplayWrite(args->board->display, digits, sizeof(digits));
                 xSemaphoreGive(args->display_mutex);
@@ -384,19 +307,19 @@ void ClockTask(void * pointer) {
                 BCDDecrement(minute, MINUTE_LIMIT);
             }
             if (clock_events & BUTTON_EVENT_0) { // Aceptar
-                ChangeMode(SET_TIME_HOUR, args->display_mutex, args->board);
+                ChangeMode(SET_TIME_HOUR, args);
             }
             if (clock_events & (BUTTON_EVENT_1 | TICKS_EVENTS_7)) { // cancelar
                 if (ClockGetTime(args->clock, &time)) {
-                    ChangeMode(SHOW_TIME, args->display_mutex, args->board);
+                    ChangeMode(SHOW_TIME, args);
                 } else {
-                    ChangeMode(UNSET_TIME, args->display_mutex, args->board);
+                    ChangeMode(UNSET_TIME, args);
                 }
             }
 
             break;
         case SET_TIME_HOUR:
-            if (xSemaphoreTake(args->display_mutex, portMAX_DELAY)) {
+            if (xSemaphoreTake(args->display_mutex, pdMS_TO_TICKS(100))) {
                 HourAndMinuteToBCD(hour, minute, digits);
                 DisplayWrite(args->board->display, digits, sizeof(digits));
                 xSemaphoreGive(args->display_mutex);
@@ -408,25 +331,25 @@ void ClockTask(void * pointer) {
                 BCDDecrement(hour, HOUR_LIMIT);
             }
             if (clock_events & BUTTON_EVENT_0) { // Aceptar
-                if (xSemaphoreTake(args->display_mutex, portMAX_DELAY)) {
+                if (xSemaphoreTake(args->display_mutex, pdMS_TO_TICKS(100))) {
                     HourAndMinuteToBCD(hour, minute, digits);
                     BCDToClockTime(&time, digits);
                     ClockSetTime(args->clock, &time);
                     xSemaphoreGive(args->display_mutex);
                 }
-                ChangeMode(SHOW_TIME, args->display_mutex, args->board);
+                ChangeMode(SHOW_TIME, args);
             }
             if (clock_events & (BUTTON_EVENT_1 | TICKS_EVENTS_7)) { // cancelar
                 if (ClockGetTime(args->clock, &time)) {
-                    ChangeMode(SHOW_TIME, args->display_mutex, args->board);
+                    ChangeMode(SHOW_TIME, args);
                 } else {
-                    ChangeMode(UNSET_TIME, args->display_mutex, args->board);
+                    ChangeMode(UNSET_TIME, args);
                 }
             }
 
             break;
         case SET_ALARM_MINUTE:
-            if (xSemaphoreTake(args->display_mutex, portMAX_DELAY)) {
+            if (xSemaphoreTake(args->display_mutex, pdMS_TO_TICKS(100))) {
                 HourAndMinuteToBCD(hour, minute, digits);
                 DisplayWrite(args->board->display, digits, sizeof(digits));
                 xSemaphoreGive(args->display_mutex);
@@ -438,19 +361,19 @@ void ClockTask(void * pointer) {
                 BCDDecrement(minute, MINUTE_LIMIT);
             }
             if (clock_events & BUTTON_EVENT_0) { // Aceptar
-                ChangeMode(SET_ALARM_HOUR, args->display_mutex, args->board);
+                ChangeMode(SET_ALARM_HOUR, args);
             }
             if (clock_events & (BUTTON_EVENT_1 | TICKS_EVENTS_7)) { // cancelar
                 if (ClockGetTime(args->clock, &time)) {
-                    ChangeMode(SHOW_TIME, args->display_mutex, args->board);
+                    ChangeMode(SHOW_TIME, args);
                 } else {
-                    ChangeMode(UNSET_TIME, args->display_mutex, args->board);
+                    ChangeMode(UNSET_TIME, args);
                 }
             }
 
             break;
         case SET_ALARM_HOUR:
-            if (xSemaphoreTake(args->display_mutex, portMAX_DELAY)) {
+            if (xSemaphoreTake(args->display_mutex, pdMS_TO_TICKS(100))) {
                 HourAndMinuteToBCD(hour, minute, digits);
                 DisplayWrite(args->board->display, digits, sizeof(digits));
                 xSemaphoreGive(args->display_mutex);
@@ -462,18 +385,18 @@ void ClockTask(void * pointer) {
                 BCDDecrement(hour, HOUR_LIMIT);
             }
             if (clock_events & BUTTON_EVENT_0) { // Aceptar
-                if (xSemaphoreTake(args->display_mutex, portMAX_DELAY)) {
+                if (xSemaphoreTake(args->display_mutex, pdMS_TO_TICKS(100))) {
                     HourAndMinuteToBCD(hour, minute, digits);
                     BCDToClockTime(&time, digits);
                     ClockSetAlarm(args->clock, &time);
                     xSemaphoreGive(args->display_mutex);
                 }
                 alarm_already_set = true;
-                ChangeMode(SHOW_TIME, args->display_mutex, args->board);
+                ChangeMode(SHOW_TIME, args);
             }
             if (clock_events & (BUTTON_EVENT_1 | TICKS_EVENTS_7)) { // cancelar
 
-                ChangeMode(SHOW_TIME, args->display_mutex, args->board);
+                ChangeMode(SHOW_TIME, args);
             }
 
             break;

@@ -29,9 +29,7 @@ SPDX-License-Identifier: MIT
 #include "task.h"
 #include "semphr.h"
 #include "event_groups.h"
-#include "queue.h"
 #include "display.h"
-#include <stdbool.h>
 #include "bsp.h"
 #include "clock.h"
 
@@ -45,7 +43,6 @@ extern "C" {
 #define CLOCK_TASK_STACK_SIZE (2 * configMINIMAL_STACK_SIZE)
 
 /* === Public data type declarations =============================================================================== */
-
 /**
  * @brief Modos de funcionamiento del reloj
  *
@@ -60,26 +57,25 @@ typedef enum {
 } mode_t;
 
 /**
- * @brief Estructura que representa el estado de un botón
+ * @brief Estructura con los argumentos que se deben enviar a las tareas relacionadas con el reloj
  *
  */
-typedef struct {
-    bool pressed;         ///< Indica si el botón esta siendo presionado
-    bool already_pressed; ///< Indica si ya fue registrado como presionado
-    uint32_t start_time;  ///< Momento en que se comenzo a presionar el botón
-} button_state_t;
-
 typedef struct clock_task_args_s {
     board_t board;
     clock_t clock;
+    mode_t current_mode;
     EventGroupHandle_t clock_events;
     SemaphoreHandle_t display_mutex;
 } * clock_task_args_t;
 /* === Public variable declarations ================================================================================ */
-extern const struct clock_alarm_driver_s driver_alarm;
 
 /* === Public function declarations ================================================================================ */
 
+/**
+ * @brief Tarea que maneja el funcionamiento del reloj
+ *
+ * @param pointer
+ */
 void ClockTask(void * pointer);
 
 /* === End of conditional blocks =================================================================================== */

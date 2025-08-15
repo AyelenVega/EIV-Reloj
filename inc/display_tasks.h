@@ -29,13 +29,8 @@ SPDX-License-Identifier: MIT
 #include "task.h"
 #include "semphr.h"
 #include "event_groups.h"
-#include "queue.h"
-#include "display_tasks.h"
 #include "bsp.h"
 #include "clock.h"
-
-#include <stdbool.h>
-
 /* === Header for C++ compatibility ================================================================================ */
 
 #ifdef __cplusplus
@@ -44,11 +39,15 @@ extern "C" {
 
 /* === Public macros definitions =================================================================================== */
 #define REFRESH_STACK_SIZE (2 * configMINIMAL_STACK_SIZE)
-#define TICKS_EVENTS_6     (1 << 6)
-#define TICKS_EVENTS_7     (1 << 7)
-#define TICKS_EVENTS_8     (1 << 8)
+#define TICKS_EVENTS_6     (1 << 6) // Evento para controlar paso de medio segundo
+#define TICKS_EVENTS_7     (1 << 7) // Evento para detectar tiempo de inactividad
+#define TICKS_EVENTS_8     (1 << 8) // evento para reiniciar contador de inactividad
 
 /* === Public data type declarations =============================================================================== */
+/**
+ * @brief Estructura con los argumentos que se deben pasar a las tareas realacionadas con el refresco de pantalla
+ *
+ */
 typedef struct refresh_task_args_s {
     SemaphoreHandle_t display_mutex;
     EventGroupHandle_t clock_events;
@@ -59,6 +58,11 @@ typedef struct refresh_task_args_s {
 /* === Public variable declarations ================================================================================ */
 
 /* === Public function declarations ================================================================================ */
+/**
+ * @brief Tarea para refrescar la pantalla
+ *
+ * @param args
+ */
 void RefreshDisplay(void * args);
 
 /* === End of conditional blocks =================================================================================== */

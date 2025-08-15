@@ -27,7 +27,6 @@ SPDX-License-Identifier: MIT
 /* === Headers files inclusions ==================================================================================== */
 #include <stdbool.h>
 #include <stdint.h>
-#include "bsp.h"
 
 /* === Header for C++ compatibility ================================================================================ */
 
