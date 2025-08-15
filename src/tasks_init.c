@@ -33,6 +33,11 @@ SPDX-License-Identifier: MIT
 /* === Private variable declarations =========================================================== */
 
 /* === Private function declarations =========================================================== */
+/**
+ * @brief Funcion para mostrar que ocurrio un error
+ *
+ * @param parameters
+ */
 void Blinking(void * parameters);
 
 /* === Public variable definitions ============================================================= */
@@ -44,7 +49,7 @@ typedef struct error_task_args_s {
 
 /* === Private function implementation ========================================================= */
 void Blinking(void * parameters) {
-    error_task_args_t args = parameters;
+    error_task_args_t args = (error_task_args_t)parameters;
     while (true) {
         DigitalOutputToggle(args->board->buzzer);
         vTaskDelay(pdMS_TO_TICKS(500));
@@ -134,7 +139,7 @@ void TasksInit(clock_t clock, board_t board) {
     if (result != pdPASS) {
         error_task_args_t error_args = malloc(sizeof(*error_args));
         error_args->board = board;
-        xTaskCreate(Blinking, "Baliza", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, NULL);
+        xTaskCreate(Blinking, "Baliza", configMINIMAL_STACK_SIZE, error_args, tskIDLE_PRIORITY + 1, NULL);
     }
 }
 /* === End of documentation ==================================================================== */

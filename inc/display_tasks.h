@@ -21,7 +21,7 @@ SPDX-License-Identifier: MIT
 #define DISPLAY_TASKS_H_
 
 /** @file digital_tasks.h
- ** @brief Declaraciones para el modulo de gestion de entradas y salidas digitales
+ ** @brief Declaraciones para el modulo de gestion de tareas del display
  **/
 
 /* === Headers files inclusions ==================================================================================== */

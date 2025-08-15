@@ -44,7 +44,7 @@ SPDX-License-Identifier: MIT
 void RefreshDisplay(void * pointer) {
     static uint32_t half_second_count = 0;
     static uint32_t thirty_seconds_count = 0;
-    refresh_task_args_t args = pointer;
+    refresh_task_args_t args = (refresh_task_args_t)pointer;
     TickType_t last_value = xTaskGetTickCount();
     TickType_t ticks = pdMS_TO_TICKS(1);
 

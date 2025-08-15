@@ -42,7 +42,7 @@ SPDX-License-Identifier: MIT
 /* === Public function implementation ========================================================= */
 
 void ButtonTask(void * pointer) {
-    button_task_args_t args = pointer;
+    button_task_args_t args = (button_task_args_t)pointer;
 
     while (true) {
         while (!DigitalInputGetIsActive(args->button)) {
@@ -57,7 +57,7 @@ void ButtonTask(void * pointer) {
     }
 }
 void ButtonPressedForLongTimeTask(void * pointer) {
-    button_task_args_t args = pointer;
+    button_task_args_t args = (button_task_args_t)pointer;
 
     while (true) {
         if (DigitalInputGetIsActive(args->button)) {

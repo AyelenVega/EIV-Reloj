@@ -210,7 +210,7 @@ void ChangeMode(mode_t value, clock_task_args_t args) {
 
 /* === Public function implementation ========================================================= */
 void ClockTask(void * pointer) {
-    clock_task_args_t args = pointer;
+    clock_task_args_t args = (clock_task_args_t)pointer;
     EventBits_t clock_events;
 
     static uint8_t hour[2] = {0};

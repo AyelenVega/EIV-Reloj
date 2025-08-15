@@ -45,8 +45,11 @@ SPDX-License-Identifier: MIT
 int main(void) {
     static board_t board;
     static clock_t clock;
+    static clock_alarm_driver_t driver_alarm;
+
     board = BoardCreate();
-    clock = ClockCreate(TICKS_PER_SECOND, ALARM_POSTPONE_MINUTES, AlarmDriverCreate(board));
+    driver_alarm = AlarmDriverCreate(board);
+    clock = ClockCreate(TICKS_PER_SECOND, ALARM_POSTPONE_MINUTES, driver_alarm);
     TasksInit(clock, board);
     vTaskStartScheduler();
 }

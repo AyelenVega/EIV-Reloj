@@ -21,7 +21,7 @@ SPDX-License-Identifier: MIT
 #define CLOCK_TASKS_H_
 
 /** @file clock_tasks.h
- ** @brief Declaraciones para el modulo de gestion de entradas y salidas digitales
+ ** @brief Declaraciones para el modulo de las tareas del clock
  **/
 
 /* === Headers files inclusions ==================================================================================== */

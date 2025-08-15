@@ -21,7 +21,7 @@ SPDX-License-Identifier: MIT
 #define ALARM_DRIVER_H_
 
 /** @file alarm_driver.h
- ** @brief Declaraciones para el modulo de gestion de entradas y salidas digitales
+ ** @brief Declaraciones para el modulo de gestion de driver
  **/
 
 /* === Headers files inclusions ==================================================================================== */
@@ -41,6 +41,12 @@ extern "C" {
 /* === Public variable declarations ================================================================================ */
 
 /* === Public function declarations ================================================================================ */
+/**
+ * @brief Crea el driver de la alrma
+ *
+ * @param board puntero al objeto board
+ * @return clock_alarm_driver_t Puntero al driver creado
+ */
 clock_alarm_driver_t AlarmDriverCreate(board_t board);
 
 /* === End of conditional blocks =================================================================================== */

@@ -21,7 +21,7 @@ SPDX-License-Identifier: MIT
 #define BUTTON_TASKS_H_
 
 /** @file button_tasks.h
- ** @brief Declaraciones del módulo para la gestion de una pantalla multiplexada de 7 segmentos
+ ** @brief Declaraciones del módulo para la gestion de las tareas de los botones
  **/
 
 /* === Headers files inclusions ==================================================================================== */
