@@ -17,17 +17,18 @@ OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 SPDX-License-Identifier: MIT
 *********************************************************************************************************************/
 
-#ifndef CLOCK_CONTROLLER_H_
-#define CLOCK_CONTROLLER_H_
+#ifndef BUTTON_TASKS_H_
+#define BUTTON_TASKS_H_
 
-/** @file clock_controller.h
- ** @brief
+/** @file button_tasks.h
+ ** @brief Declaraciones del módulo para la gestion de una pantalla multiplexada de 7 segmentos
  **/
 
 /* === Headers files inclusions ==================================================================================== */
+#include "FreeRTOS.h"
 #include "digital.h"
-#include "clock.h"
-#include "bsp.h"
+#include "event_groups.h"
+
 /* === Header for C++ compatibility ================================================================================ */
 
 #ifdef __cplusplus
@@ -35,42 +36,27 @@ extern "C" {
 #endif
 
 /* === Public macros definitions =================================================================================== */
+#define BUTTON_EVENT_0         (1 << 0)
+#define BUTTON_EVENT_1         (1 << 1)
+#define BUTTON_EVENT_2         (1 << 2)
+#define BUTTON_EVENT_3         (1 << 3)
+#define BUTTON_EVENT_4         (1 << 4)
+#define BUTTON_EVENT_5         (1 << 5)
 
+#define ANY_EVENT              0xFF
+
+#define BUTTON_TASK_STACK_SIZE (2 * configMINIMAL_STACK_SIZE)
 /* === Public data type declarations =============================================================================== */
-/**
- * @brief Modos de funcionamiento del reloj
- *
- */
-typedef enum {
-    UNSET_TIME,       ///< La hora todavía no fue configurada
-    SHOW_TIME,        ///< Modo de visualización del tiempo
-    SET_TIME_MINUTE,  ///< Modo de configuración de los minutos del tiempo
-    SET_TIME_HOUR,    ///< Modo de configuración de las horas del tiempo
-    SET_ALARM_MINUTE, ///< Modo de configuración de los minutos de la alarma
-    SET_ALARM_HOUR,   ///< Modo de configuración de las horas de la alarma
-} mode_t;
+typedef struct button_task_args_s {
+    EventGroupHandle_t clock_events;
+    uint8_t event_bit;
+    digital_input_t button;
+} * button_task_args_t;
 
 /* === Public variable declarations ================================================================================ */
-extern board_t board;
-extern clock_t clock;
-extern mode_t mode;
-extern const struct clock_alarm_driver_s driver_alarm;
-extern uint32_t system_ticks;
-extern uint32_t inactivity_count;
-extern bool half_second_flag;
 
 /* === Public function declarations ================================================================================ */
-/**
- * @brief Cambia de modo de funcionamiento del reloj.
- *
- * @param value Nuevo modo a establecer.
- */
-void ChangeMode(mode_t value);
-
-/**
- * @brief Máquina de Estados Finitos (MEF) del reloj.
- */
-void Clock_MEF(void);
+void ButtonTask(void * args);
 
 /* === End of conditional blocks =================================================================================== */
 
@@ -78,4 +64,4 @@ void Clock_MEF(void);
 }
 #endif
 
-#endif /* CLOCK_CONTROLLER_H_ */
+#endif /* BUTTON_TASKS_H_ */

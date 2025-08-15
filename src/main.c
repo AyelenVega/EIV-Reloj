@@ -22,23 +22,46 @@ SPDX-License-Identifier: MIT
  **/
 
 /* === Headers files inclusions =============================================================== */
-#include "clock_controller.h"
+#include "FreeRTOS.h"
+#include "event_groups.h"
+#include "queue.h"
+#include "semphr.h"
+#include "task.h"
+#include "bsp.h"
+#include "clock.h"
+
+#include "button_tasks.h"
+#include "clock_tasks.h"
+#include "display_tasks.h"
+#include <stdlib.h>
 
 /* === Macros definitions ====================================================================== */
+#define BUTTON_ACCEPT          BUTTON_EVENT_0
+#define BUTTON_CANCEL          BUTTON_EVENT_1
+#define BUTTON_INCREMENT       BUTTON_EVENT_2
+#define BUTTON_DECREMENT       BUTTON_EVENT_3
+#define BUTTON_SET_TIME        BUTTON_EVENT_4
+#define BUTTON_SET_ALARM       BUTTON_EVENT_5
+#define HALF_SECOND            TICKS_EVENTS_6
+#define INACTIVITY_TIME        TICKS_EVENTS_7
+#define RESET_THIRTY_SECONDS   TICKS_EVENT_8
+
 #define ALARM_POSTPONE_MINUTES 5    ///< Cantidad de minutos que se pospone la alarma
 #define TICKS_PER_SECOND       1000 ///< Cantidad de ticks por segundo
 /* === Private data type declarations ========================================================== */
+board_t board;
+clock_t clock;
 
 /* === Private variable declarations =========================================================== */
-board_t board;
-mode_t mode;
-clock_t clock;
-uint32_t system_ticks = 0;
-uint32_t inactivity_count = 0;
-bool half_second_flag;
-bool main_loop_flag = false;
 
 /* === Private function declarations =========================================================== */
+void Blinking(void * parameters) {
+    while (true) {
+        DigitalOutputToggle(board->buzzer);
+        vTaskDelay(pdMS_TO_TICKS(500));
+    }
+}
+void TasksInit(clock_t clock, board_t board);
 
 /* === Public variable definitions ============================================================= */
 
@@ -50,35 +73,99 @@ bool main_loop_flag = false;
 int main(void) {
     clock = ClockCreate(TICKS_PER_SECOND, ALARM_POSTPONE_MINUTES, &driver_alarm);
     board = BoardCreate();
+    TasksInit(clock, board);
+    vTaskStartScheduler();
+
+    /*
     SysTickInit(TICKS_PER_SECOND);
     ChangeMode(UNSET_TIME);
-
     while (true) {
-        if (main_loop_flag) {
+
+         if (main_loop_flag) {
             main_loop_flag = false;
             Clock_MEF();
         }
+
     }
+    */
 }
+void TasksInit(clock_t clock, board_t board) {
+    EventGroupHandle_t clock_events;
+    SemaphoreHandle_t display_mutex;
+    BaseType_t result;
 
-void SysTick_Handler(void) {
-    static uint32_t count_half_second = 0;
-    static uint32_t count = 0;
+    display_mutex = xSemaphoreCreateMutex();
+    clock_events = xEventGroupCreate();
 
-    DisplayRefresh(board->display);
-    ClockNewTick(clock);
-    count++;
-    count_half_second++;
-    system_ticks++;
-    inactivity_count++;
-
-    if (count_half_second >= 500) {
-        count_half_second = 0;
-        half_second_flag = true;
+    if (clock_events && display_mutex) {
+        button_task_args_t button_args = malloc(sizeof(*button_args));
+        button_args->clock_events = clock_events;
+        button_args->event_bit = BUTTON_ACCEPT;
+        button_args->button = board->accept;
+        result =
+            xTaskCreate(ButtonTask, "ButtonAccept", BUTTON_TASK_STACK_SIZE, button_args, tskIDLE_PRIORITY + 1, NULL);
     }
-    if (count >= 100) {
-        main_loop_flag = true;
-        count = 0;
+    if (result == pdPASS) {
+        button_task_args_t button_args = malloc(sizeof(*button_args));
+        button_args->clock_events = clock_events;
+        button_args->event_bit = BUTTON_CANCEL;
+        button_args->button = board->cancel;
+        result =
+            xTaskCreate(ButtonTask, "ButtonAccept", BUTTON_TASK_STACK_SIZE, button_args, tskIDLE_PRIORITY + 1, NULL);
+    }
+
+    if (result == pdPASS) {
+        button_task_args_t button_args = malloc(sizeof(*button_args));
+        button_args->clock_events = clock_events;
+        button_args->event_bit = BUTTON_INCREMENT;
+        button_args->button = board->increment;
+        result =
+            xTaskCreate(ButtonTask, "ButtonIncrement", BUTTON_TASK_STACK_SIZE, button_args, tskIDLE_PRIORITY + 1, NULL);
+    }
+    if (result == pdPASS) {
+        button_task_args_t button_args = malloc(sizeof(*button_args));
+        button_args->clock_events = clock_events;
+        button_args->event_bit = BUTTON_DECREMENT;
+        button_args->button = board->decrement;
+        result =
+            xTaskCreate(ButtonTask, "ButtonDecrement", BUTTON_TASK_STACK_SIZE, button_args, tskIDLE_PRIORITY + 1, NULL);
+    }
+    if (result == pdPASS) {
+        button_task_args_t button_args = malloc(sizeof(*button_args));
+        button_args->clock_events = clock_events;
+        button_args->event_bit = BUTTON_SET_TIME;
+        button_args->button = board->set_time;
+        result =
+            xTaskCreate(ButtonTask, "ButtonSetTime", BUTTON_TASK_STACK_SIZE, button_args, tskIDLE_PRIORITY + 1, NULL);
+    }
+    if (result == pdPASS) {
+        button_task_args_t button_args = malloc(sizeof(*button_args));
+        button_args->clock_events = clock_events;
+        button_args->event_bit = BUTTON_SET_ALARM;
+        button_args->button = board->set_alarm;
+        result =
+            xTaskCreate(ButtonTask, "ButtonSetAlarm", BUTTON_TASK_STACK_SIZE, button_args, tskIDLE_PRIORITY + 1, NULL);
+    }
+    if (result == pdPASS) {
+        clock_task_args_t clock_args = malloc(sizeof(*clock_args));
+        clock_args->clock_events = clock_events;
+        clock_args->display_mutex = display_mutex;
+        clock_args->board = board;
+        clock_args->clock = clock;
+        result = xTaskCreate(ClockTask, "ClockTask", CLOCK_TASK_STACK_SIZE, clock_args, tskIDLE_PRIORITY + 3, NULL);
+    }
+    if (result == pdPASS) {
+        refresh_task_args_t refresh_args = malloc(sizeof(*refresh_args));
+        refresh_args->display_mutex = display_mutex;
+        refresh_args->board = board;
+        refresh_args->clock = clock;
+        refresh_args->clock_events = clock_events;
+        result = xTaskCreate(RefreshDisplay, "Refresh", REFRESH_STACK_SIZE, refresh_args, tskIDLE_PRIORITY + 2, NULL);
+    }
+
+    if (result != pdPASS) {
+        /* Creación de las tareas del sistema */
+        xTaskCreate(Blinking, "Baliza", configMINIMAL_STACK_SIZE, NULL, tskIDLE_PRIORITY + 1, NULL);
     }
 }
 

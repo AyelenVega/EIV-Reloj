@@ -17,16 +17,25 @@ OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 SPDX-License-Identifier: MIT
 *********************************************************************************************************************/
 
-#ifndef BSP_H_
-#define BSP_H_
+#ifndef DISPLAY_TASKS_H_
+#define DISPLAY_TASKS_H_
 
-/** @file bsp.h
- ** @brief Declaraciones para el módulo de inicialización de la placa
+/** @file digital_tasks.h
+ ** @brief Declaraciones para el modulo de gestion de entradas y salidas digitales
  **/
 
 /* === Headers files inclusions ==================================================================================== */
-#include "digital.h"
-#include "display.h"
+#include "FreeRTOS.h"
+#include "task.h"
+#include "semphr.h"
+#include "event_groups.h"
+#include "queue.h"
+#include "display_tasks.h"
+#include "bsp.h"
+#include "clock.h"
+
+#include <stdbool.h>
+
 /* === Header for C++ compatibility ================================================================================ */
 
 #ifdef __cplusplus
@@ -34,35 +43,23 @@ extern "C" {
 #endif
 
 /* === Public macros definitions =================================================================================== */
+#define REFRESH_STACK_SIZE (2 * configMINIMAL_STACK_SIZE)
+#define TICKS_EVENTS_6     (1 << 6)
+#define TICKS_EVENTS_7     (1 << 7)
+#define TICKS_EVENTS_8     (1 << 8)
 
 /* === Public data type declarations =============================================================================== */
-
-//! Representa las entradas y salidas digitales de la placa
-typedef struct board_s {
-    digital_output_t buzzer;
-    digital_output_t led1;
-    digital_output_t led2;
-    digital_output_t led3;
-    digital_input_t set_time;
-    digital_input_t set_alarm;
-    digital_input_t decrement;
-    digital_input_t increment;
-    digital_input_t accept;
-    digital_input_t cancel;
-    display_t display;
-} * board_t;
+typedef struct refresh_task_args_s {
+    SemaphoreHandle_t display_mutex;
+    EventGroupHandle_t clock_events;
+    board_t board;
+    clock_t clock;
+} * refresh_task_args_t;
 
 /* === Public variable declarations ================================================================================ */
 
 /* === Public function declarations ================================================================================ */
-
-/**
- * @brief Inicializa la placa y configura entradas y salidas digitales
- *
- * @return board_t Referencia a la placa creada
- */
-board_t BoardCreate(void);
-void SysTickInit(uint32_t ticks);
+void RefreshDisplay(void * args);
 
 /* === End of conditional blocks =================================================================================== */
 
@@ -70,4 +67,4 @@ void SysTickInit(uint32_t ticks);
 }
 #endif
 
-#endif /* BSP_H_ */
+#endif /* DISPLAY_TASKS_H_ */

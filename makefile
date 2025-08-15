@@ -1,4 +1,6 @@
-MODULES = 
+# Makefile principal (en la carpeta 'reloj')
+
+MODULES = module/freertos
 BOARD = edu-ciaa-nxp
 MUJU = ./muju
 
@@ -11,5 +13,3 @@ doc:
 	@echo "Generando documentacion"
 	@mkdir -p $(DOC_DIR)
 	@doxygen Doxyfile
-
-

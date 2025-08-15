@@ -17,16 +17,24 @@ OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 SPDX-License-Identifier: MIT
 *********************************************************************************************************************/
 
-#ifndef BSP_H_
-#define BSP_H_
+#ifndef CLOCK_TASKS_H_
+#define CLOCK_TASKS_H_
 
-/** @file bsp.h
- ** @brief Declaraciones para el módulo de inicialización de la placa
+/** @file clock_tasks.h
+ ** @brief Declaraciones para el modulo de gestion de entradas y salidas digitales
  **/
 
 /* === Headers files inclusions ==================================================================================== */
-#include "digital.h"
+#include "FreeRTOS.h"
+#include "task.h"
+#include "semphr.h"
+#include "event_groups.h"
+#include "queue.h"
 #include "display.h"
+#include <stdbool.h>
+#include "bsp.h"
+#include "clock.h"
+
 /* === Header for C++ compatibility ================================================================================ */
 
 #ifdef __cplusplus
@@ -34,35 +42,45 @@ extern "C" {
 #endif
 
 /* === Public macros definitions =================================================================================== */
+#define CLOCK_TASK_STACK_SIZE (2 * configMINIMAL_STACK_SIZE)
 
 /* === Public data type declarations =============================================================================== */
 
-//! Representa las entradas y salidas digitales de la placa
-typedef struct board_s {
-    digital_output_t buzzer;
-    digital_output_t led1;
-    digital_output_t led2;
-    digital_output_t led3;
-    digital_input_t set_time;
-    digital_input_t set_alarm;
-    digital_input_t decrement;
-    digital_input_t increment;
-    digital_input_t accept;
-    digital_input_t cancel;
-    display_t display;
-} * board_t;
+/**
+ * @brief Modos de funcionamiento del reloj
+ *
+ */
+typedef enum {
+    UNSET_TIME,       ///< La hora todavía no fue configurada
+    SHOW_TIME,        ///< Modo de visualización del tiempo
+    SET_TIME_MINUTE,  ///< Modo de configuración de los minutos del tiempo
+    SET_TIME_HOUR,    ///< Modo de configuración de las horas del tiempo
+    SET_ALARM_MINUTE, ///< Modo de configuración de los minutos de la alarma
+    SET_ALARM_HOUR,   ///< Modo de configuración de las horas de la alarma
+} mode_t;
 
+/**
+ * @brief Estructura que representa el estado de un botón
+ *
+ */
+typedef struct {
+    bool pressed;         ///< Indica si el botón esta siendo presionado
+    bool already_pressed; ///< Indica si ya fue registrado como presionado
+    uint32_t start_time;  ///< Momento en que se comenzo a presionar el botón
+} button_state_t;
+
+typedef struct clock_task_args_s {
+    board_t board;
+    clock_t clock;
+    EventGroupHandle_t clock_events;
+    SemaphoreHandle_t display_mutex;
+} * clock_task_args_t;
 /* === Public variable declarations ================================================================================ */
+extern const struct clock_alarm_driver_s driver_alarm;
 
 /* === Public function declarations ================================================================================ */
 
-/**
- * @brief Inicializa la placa y configura entradas y salidas digitales
- *
- * @return board_t Referencia a la placa creada
- */
-board_t BoardCreate(void);
-void SysTickInit(uint32_t ticks);
+void ClockTask(void * pointer);
 
 /* === End of conditional blocks =================================================================================== */
 
@@ -70,4 +88,4 @@ void SysTickInit(uint32_t ticks);
 }
 #endif
 
-#endif /* BSP_H_ */
+#endif /* CLOCK_TASKS_H_ */

@@ -27,6 +27,7 @@ SPDX-License-Identifier: MIT
 #include "chip.h"
 #include "ciaa.h"
 #include "poncho.h"
+#include "board.h"
 #include <stdlib.h>
 
 /* === Macros definitions ========================================================================================== */
@@ -188,6 +189,9 @@ void DigitsTurnOn(uint8_t digit) {
 board_t BoardCreate(void) {
     board_t board = malloc(sizeof(struct board_s));
     if (board != NULL) {
+        BoardSetup();
+        BoardSetup();
+
         DigitsInit();
         SegmentsInit();
         DigitalInputInit(board);
