@@ -30,8 +30,6 @@ SPDX-License-Identifier: MIT
 #define TICKS_PER_SECOND       1000 ///< Cantidad de ticks por segundo
 
 /* === Private data type declarations ========================================================== */
-static board_t board;
-static clock_t clock;
 
 /* === Private variable declarations =========================================================== */
 
@@ -45,6 +43,8 @@ static clock_t clock;
 
 /* === Public function implementation ========================================================= */
 int main(void) {
+    static board_t board;
+    static clock_t clock;
     board = BoardCreate();
     clock = ClockCreate(TICKS_PER_SECOND, ALARM_POSTPONE_MINUTES, AlarmDriverCreate(board));
     TasksInit(clock, board);
